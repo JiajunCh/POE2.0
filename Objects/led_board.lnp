@@ -1,0 +1,10 @@
+".\Objects\STARTUP.obj",
+".\Objects\main.obj",
+".\Objects\i2c.obj",
+".\Objects\poe_m.obj",
+".\Objects\timer.obj",
+".\Objects\tt9980.obj",
+".\Objects\uart.obj" 
+TO ".\Objects\led_board" 
+PRINT(".\Listings\led_board.m51") RAMSIZE(256) 
+DISABLEWARNING (16,13) 
