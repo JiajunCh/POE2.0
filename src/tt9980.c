@@ -2,23 +2,21 @@
 #include "i2c.h"
 #include "STC8xxxx.H"
 
-void set_WorkMode(uint8_t slave, uint8_t mode){
-	i2c_write(TT9980x_ADDR+slave, WORK_MODE, &mode, 1);
+void set_DET(uint8_t dev, uint8_t ch, uint8_t state){
+	uint8_t old_state = 0, ret = 0, trys = 3;
+	do{
+		ret = i2c_read(TT9980x_ADDR+dev, DET_EN, &old_state, 1);
+	}while(ret && trys--);
+	if(!ret){
+		if(state)
+			state = 0x11<<ch;
+		else
+			state = 0;
+		old_state &= ~state;
+		old_state |= state;
+		trys = 3;
+		do{
+			ret = i2c_write(TT9980x_ADDR+dev, DET_EN, &old_state, 1);
+		}while(ret && trys--);
+	}
 }
-
-void set_DetAuto(uint8_t slave, uint8_t det){
-	i2c_write(TT9980x_ADDR+slave, DET_EN, &det, 1);
-}
-
-uint8_t get_PwrState(uint8_t slave, uint8_t* state){
-	uint8_t ret=0;
-	ret = i2c_read(TT9980x_ADDR+slave, PWR_STATE, state, 1);
-	return ret;
-}
-
-uint8_t get_Current(uint8_t slave, uint8_t* pbuf){
-	uint8_t ret=0;
-	ret = i2c_read(TT9980x_ADDR+slave, I1_L, pbuf, U4_H-I1_L+1);
-	return ret;
-}
-

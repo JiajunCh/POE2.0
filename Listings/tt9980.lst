@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   TT9980                                                            05/25/2018 20:13:42 PAGE 1   
+C51 COMPILER V9.57.0.0   TT9980                                                            05/28/2018 21:11:51 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE TT9980
@@ -12,34 +12,32 @@ line level    source
    2          #include "i2c.h"
    3          #include "STC8xxxx.H"
    4          
-   5          void set_WorkMode(uint8_t slave, uint8_t mode){
-   6   1        i2c_write(TT9980x_ADDR+slave, WORK_MODE, &mode, 1);
-   7   1      }
-   8          
-   9          void set_DetAuto(uint8_t slave, uint8_t det){
-  10   1        i2c_write(TT9980x_ADDR+slave, DET_EN, &det, 1);
-  11   1      }
-  12          
-  13          uint8_t get_PwrState(uint8_t slave, uint8_t* state){
-  14   1        uint8_t ret=0;
-  15   1        ret = i2c_read(TT9980x_ADDR+slave, PWR_STATE, state, 1);
-  16   1        return ret;
-  17   1      }
-  18          
-  19          uint8_t get_Current(uint8_t slave, uint8_t* pbuf){
-  20   1        uint8_t ret=0;
-  21   1        ret = i2c_read(TT9980x_ADDR+slave, I1_L, pbuf, U4_H-I1_L+1);
-  22   1        return ret;
-  23   1      }
-  24          
+   5          void set_DET(uint8_t dev, uint8_t ch, uint8_t state){
+   6   1        uint8_t old_state = 0, ret = 0, trys = 3;
+   7   1        do{
+   8   2          ret = i2c_read(TT9980x_ADDR+dev, DET_EN, &old_state, 1);
+   9   2        }while(ret && trys--);
+  10   1        if(!ret){
+  11   2          if(state)
+  12   2            state = 0x11<<ch;
+  13   2          else
+  14   2            state = 0;
+  15   2          old_state &= ~state;
+  16   2          old_state |= state;
+  17   2          trys = 3;
+  18   2          do{
+  19   3            ret = i2c_write(TT9980x_ADDR+dev, DET_EN, &old_state, 1);
+  20   3          }while(ret && trys--);
+  21   2        }
+  22   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =     68    ----
+   CODE SIZE        =    110    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =   ----       2
+   DATA SIZE        =   ----       5
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
 END OF MODULE INFORMATION.

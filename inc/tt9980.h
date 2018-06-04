@@ -25,5 +25,7 @@
 #define U4_L				(0x3E)	//r  low byte of voltage of port 4
 #define U4_H				(0x3F)	//r  hight byte of voltage of port 4
 
+void set_DET(unsigned char dev, unsigned char ch, unsigned char state);
+
 #endif
 

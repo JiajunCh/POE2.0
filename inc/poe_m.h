@@ -7,24 +7,23 @@
 #define PWR_LED_MAX		(100)		//pwr led快闪周期(ms)：s电压大于100%
 #define PWR_LED_FAST	(250)		//pwr led快闪周期(ms)：s电压大于90%
 #define PWR_LED_SLOW	(750)		//pwr led慢闪周期(ms)：s电压大于80%
-#define T_GET_G				(500) 	//收集单个设备G状态周期(ms)
+#define T_GET_G				(100) 	//收集单个设备G状态周期(ms)
+#define T_EN_D				(200) 	//系统开始逐个开启端口时间间隔
 #define SUM_ADC				(MAX_DEVICE * 1200) 	//D极ADC总和极限(ms)
 #define T_GET_IU			(500) 	//轮流采集每个设备的电流电压时间间隔
-#define IU_MAX100			(133*24) //最大负载功率100%  //单个端口功率公式 IU_MAX100 = 最大功率(毫瓦)/122.07/5.835,最后乘设备个数
-#define IU_MAX95			(IU_MAX100*95/100) //最大负载功率95%
-#define IU_MAX75			(IU_MAX100*75/100) //最大负载功率75%
+#define IU_MAX				(24000) //最大负载功率100%  //全部端口电流公式 IU_MAX = 端口电流总和(ua)/122.07
+#define IU_MID				(IU_MAX * 95 / 100) //最大负载功率95%
+#define IU_NOR				(IU_MAX * 75 / 100) //最大负载功率75%
 //************************************************************************
 
-#define SUM_ADC90			(SUM_ADC*100/90)			//90% SUM_ADC
-#define SUM_ADC80			(SUM_ADC*100/80)			//80% SUM_ADC
-
-#define PRJ_NAME	"poe_master\n"
+#define PRJ_NAME	"poe_led\n"
 #define SW_VER		"Sw_Ver:V2.0\n"
 #define HW_VER		"Hw_Ver:V2.0\n"
 
 #define SYSCLK 			(24000000)
 #define MAX_CH			(4)
 #define MAX_DEVICE	(4)
+#define ALL_CH			(MAX_CH*MAX_DEVICE)
 
 #define CAST_8(addr)	(*(volatile unsigned char* addr))
 #define CAST_16(addr)	(*(volatile unsigned int* addr))
@@ -94,8 +93,11 @@ P5M0=0x0C;	P5M1=0x00;
 
 void WDG_config(void);
 void WDG_freed(void);
+void system_init(void);
+void timeEv_open_den(uint8_t tick);
 void timeEv_pwrled(uint8_t tick);
 void timeEv_getGsta(uint8_t tick);
+void timeEv_getIU(uint8_t tick);
 
 #endif
 

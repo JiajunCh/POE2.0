@@ -5,7 +5,12 @@
 
 static uint16_t xdata pwrled_time = 0;	//led flash time
 
+static uint8_t xdata den_start = 0;			//d enable gradually satrt
+
 static void set_l(uint8_t dev, uint8_t ch, bit val);
+static void g_disable(void);
+static void g_enable(void);
+static void set_den(uint8_t sta);
 
 //========================================================================
 // function:		WDG_config
@@ -30,6 +35,52 @@ void WDG_freed(void){
 }
 
 //========================================================================
+// function:		system_init
+// description:	system init state
+// parameter: 	void
+// return: 			void
+// version: 		V1.0, 2018-5-28
+//========================================================================
+void system_init(void){
+	uint8_t xdata dev=0, ch=0, state = 0;
+	uint8_t xdata ret = 0, trys = 3;
+	for(dev=0; dev<MAX_DEVICE; dev++)
+		for(ch=0; ch<MAX_CH; ch++)
+	set_l(dev, ch, L_OFF);					//led off : all 
+	
+	PWR_LED = PWR_LED_OFF;
+	pwrled_time = PWR_LED_STOP;			//pwrled off
+	
+	set_den(0);											//set d disable
+	
+	state = 0xAA;
+	for(dev=0; dev<MAX_DEVICE; dev++){	//set work mode
+		trys = 3;
+		do{
+			ret = i2c_write(TT9980x_ADDR+dev, WORK_MODE, &state, 1);
+		}while(ret && trys--);
+	}
+}
+
+//========================================================================
+// function:		timeEv_open_den
+// description:	d enable gradually
+// parameter: 	void
+// return: 			void
+// version: 		V1.0, 2018-5-28
+//========================================================================
+void timeEv_open_den(uint8_t tick){
+	static uint16_t xdata den_tick = 0;
+	if(den_start >= ALL_CH)
+		return;
+	den_tick += tick;
+	if(den_tick > T_EN_D){
+		g_enable();
+		den_start++;
+	}
+}
+
+//========================================================================
 // function:		timeEv_pwrled
 // description:	pwr led flash
 // parameter: 	tick
@@ -37,7 +88,7 @@ void WDG_freed(void){
 // version: 		V2.0, 2018-4-25
 //========================================================================
 void timeEv_pwrled(uint8_t tick){
-	static uint16_t pwrled_tick = 0;
+	static uint16_t xdata pwrled_tick = 0;
 	pwrled_tick += tick;
 	if(PWR_LED_STOP == pwrled_time)
 		return;
@@ -52,7 +103,7 @@ void timeEv_pwrled(uint8_t tick){
 // description:	uart1 interrupt_ service handle
 // parameter: 	tick
 // return: 			void
-// version: 		V2.0, 2018-4-25
+// version: 		V2.0, 2018-5-25
 //========================================================================
 void timeEv_getGsta(uint8_t tick){
 	static uint16_t xdata getg_tick = 0;
@@ -61,7 +112,8 @@ void timeEv_getGsta(uint8_t tick){
 	getg_tick += tick;
 	if(getg_tick > T_GET_G){
 		getg_tick = 0;
-		i2c_read(TT9980x_ADDR+g_slave, PWR_STATE, &state, 1);
+		if(0 != i2c_read(TT9980x_ADDR+g_slave, PWR_STATE, &state, 1))
+			state = G_OFF<<0 | G_OFF<<1 | G_OFF<<2 | G_OFF<<3; //if i2c_err, then led_off
 		if(G_ON != L_ON) state = ~state;
 		for(ch=0; ch<MAX_CH; ch++)
 			set_l(g_slave, ch, (bit)(state>>ch));
@@ -87,29 +139,128 @@ void timeEv_getIU(uint8_t tick){
 		uint8_t *pbuf = iu_buf;
 		getiu_tick = 0;
 		for(dev=0; dev<MAX_DEVICE; dev++){
-			uint8_t ret = i2c_read(TT9980x_ADDR+dev, I1_L, iu_buf+dev*MAX_CH, U4_H-I1_L+1);
-			if(ret) continue;
-		}
-		for(dev=0; dev<MAX_DEVICE; dev++){
-			for(ch=0; ch<MAX_CH; ch++){
-				sum_iu += (*(pbuf)|*(pbuf+1)) * (*(pbuf+2)|*(pbuf+3));
-				pbuf += 4;
+			uint8_t ret = 0;
+			pbuf = iu_buf+dev*MAX_CH;
+			ret = i2c_read(TT9980x_ADDR+dev, I1_L, pbuf, U4_H-I1_L+1);
+			if(!ret){
+				for(ch=0; ch<MAX_CH; ch++){
+					sum_iu += *(pbuf)|*(pbuf+1);
+					pbuf += 4;
+				}
 			}
 		}
-		sum_iu /= 1000000;
-		if(sum_iu > IU_MAX100){
+		if(sum_iu > IU_MAX){					// >100%
+			g_disable();								// g_off + d_off : one
+			den_start = ALL_CH;
 			pwrled_time = PWR_LED_MAX;
 		}
-		else if(sum_iu > IU_MAX95){
+		else if(sum_iu > IU_MID){			// >90%
+			set_den(0);									// d_off : all
+			den_start = ALL_CH;
 			pwrled_time = PWR_LED_FAST;
 		}
-		else if(sum_iu > IU_MAX75){
+		else if(sum_iu > IU_NOR){			// >75%
+			set_den(0);									// d_off : all
+			den_start = ALL_CH;
 			pwrled_time = PWR_LED_SLOW;
 		}
-		else{
+		else{													// <=75%
+			if(den_start<ALL_CH) return;
+			g_enable();									// g_on + d_on : one
 			pwrled_time = PWR_LED_STOP;
 			PWR_LED = PWR_LED_OFF;
 		}
+	}
+}
+
+//========================================================================
+// function:		g_disable
+// description:	close gate witch is ON and lower previlige
+// parameter: 	void
+// return: 			closed flag
+// version: 		V1.0, 2018-5-28
+//========================================================================
+static void g_disable(void){
+	char xdata ret = 0, dev = 0, ch = 0;
+	uint8_t xdata g_state = 0, d_state = 0, close_state = 0, closed = 0;
+	for(dev=MAX_DEVICE-1; dev>=0; dev--){
+		uint8_t ret = 0, trys = 3;
+		do{
+			ret = i2c_read(TT9980x_ADDR+dev, PWR_STATE, &g_state, 1);
+		}while(ret && trys--);
+		if(ret) continue;
+		for(ch=MAX_CH-1; ch>=0; ch--){
+			if((g_state>>ch)&0x01 == G_ON){
+				close_state = (0x01<<ch)<<4;
+				trys = 3;
+				do{
+					ret = i2c_write(TT9980x_ADDR+dev, PWR_ON, &close_state, 1);
+				}while(ret && trys--);
+				trys = 3;
+				do{
+					ret = i2c_read(TT9980x_ADDR+dev, DET_EN, &d_state, 1);
+				}while(ret && trys--);
+				d_state &= ~(0x11<<ch);
+				trys = 3;
+				do{
+					ret = i2c_write(TT9980x_ADDR+dev, DET_EN, &d_state, 1);
+				}while(ret && trys--);
+				return;
+			}
+		}
+	}
+}
+
+//========================================================================
+// function:		g_enable
+// description:	open gate witch is OFF and higher previlige
+// parameter: 	void
+// return: 			closed flag
+// version: 		V1.0, 2018-5-28
+//========================================================================
+static void g_enable(void){
+	char xdata ret = 0, dev = 0, ch = 0;
+	uint8_t xdata d_state = 0, g_state, en_state = 0;
+	for(dev=0; dev<MAX_DEVICE; dev++){
+		uint8_t ret = 0, trys = 3;
+		do{
+			ret = i2c_read(TT9980x_ADDR+dev, DET_EN, &d_state, 1);
+		}while(ret && trys--);
+		if(ret) continue;
+		for(ch=0; ch<MAX_CH; ch++){
+			if(((d_state>>ch)&0x01) == 0){
+				g_state = (0x01<<ch)<<4;
+				trys = 3;
+				do{
+					ret = i2c_write(TT9980x_ADDR+dev, PWR_ON, &g_state, 1);
+				}while(ret && trys--);
+				d_state |= (0x11<<ch);
+				trys = 3;
+				do{
+					ret = i2c_write(TT9980x_ADDR+dev, DET_EN, &d_state, 1);
+				}while(ret && trys--);
+				return;
+			}
+		}
+	}
+}
+
+//========================================================================
+// function:		set_den
+// description:	set d enable / disable
+// parameter: 	void
+// return: 			void
+// version: 		V1.0, 2018-5-28
+//========================================================================
+static void set_den(uint8_t sta){
+	uint8_t xdata dev = 0, ret = 0, trys = 3;
+	static uint8_t xdata den_flag = 0;		//d flag
+	if(den_flag == sta) return;
+	den_flag = sta;
+	for(dev=0; dev<MAX_DEVICE; dev++){
+		do{
+			ret = i2c_write(TT9980x_ADDR+dev, DET_EN, &sta, 1);
+		}while(ret && trys--);
 	}
 }
 
@@ -118,7 +269,7 @@ void timeEv_getIU(uint8_t tick){
 // description:	set led on/off
 // parameter: 	device, channel, state
 // return: 			void
-// version: 		V2.0, 2018-4-25
+// version: 		V2.0, 2018-5-25
 //========================================================================
 static void set_l(uint8_t dev, uint8_t ch, bit val){
 	uint8_t l = 0xff;
@@ -152,6 +303,4 @@ static void set_l(uint8_t dev, uint8_t ch, bit val){
 		default:break;
 	}
 }
-
-
 
