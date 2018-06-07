@@ -1,6 +1,7 @@
 #include "poe_m.h"
 #include "uart.h"
 #include "timer.h"
+#include "i2c.h"
 #include "STC8xxxx.h"
 
 //========================================================================
@@ -53,6 +54,7 @@ void main(void){
 	PORT_INIT();
 	TIMER1_config();
 	WDG_config();
+	i2c_config();
 #if (DEBUG)
 	UART1_config();
 #endif

@@ -88,6 +88,8 @@ void	UART1_config(void){
 // version: 		V1.0, 2018-1-11
 //========================================================================
 void uart1_handle (void) interrupt 4{
+	uint8_t tem_psw2 = P_SW2;
+	EAXRAM();
 	while(RI){	//"while" instead of "if" to use "break" later
 		static uint8_t temp = 0;
 		RI = 0;
@@ -105,6 +107,7 @@ void uart1_handle (void) interrupt 4{
 		TI = 0;
 		B_TX1_Busy = 0;
 	}
+	P_SW2 = tem_psw2;
 }
 
 //========================================================================
