@@ -131,22 +131,18 @@ void timeEv_getGsta(uint8_t tick){
 //========================================================================
 void timeEv_getIU(uint8_t tick){
 	static uint16_t xdata getiu_tick = 0;
-	uint8_t xdata iu_buf[(U4_H-U1_L+1)*MAX_DEVICE] = {0};
 	getiu_tick += tick;
 	if(getiu_tick > T_GET_IU){
 		uint8_t dev = 0, ch = 0;
 		uint32_t sum_iu = 0;
-		uint8_t *pbuf = iu_buf;
 		getiu_tick = 0;
 		for(dev=0; dev<MAX_DEVICE; dev++){
 			uint8_t ret = 0;
-			pbuf = iu_buf+dev*MAX_CH;
+			uint8_t pbuf[U4_H-U1_L+1] = {0};
 			ret = i2c_read(TT9980x_ADDR+dev, I1_L, pbuf, U4_H-I1_L+1);
 			if(!ret){
-				for(ch=0; ch<MAX_CH; ch++){
-					sum_iu += *(pbuf)|*(pbuf+1);
-					pbuf += 4;
-				}
+				for(ch=0; ch<MAX_CH; ch++)
+					sum_iu += (pbuf[ch<<2] | (pbuf[(ch<<2)+1]<<8));
 			}
 		}
 		if(sum_iu > IU_MAX){					// >100%
@@ -182,7 +178,7 @@ void timeEv_getIU(uint8_t tick){
 //========================================================================
 static void g_disable(void){
 	char xdata ret = 0, dev = 0, ch = 0;
-	uint8_t xdata g_state = 0, d_state = 0, close_state = 0, closed = 0;
+	uint8_t g_state = 0, d_state = 0, close_state = 0;
 	for(dev=MAX_DEVICE-1; dev>=0; dev--){
 		uint8_t ret = 0, trys = 3;
 		do{
@@ -220,7 +216,7 @@ static void g_disable(void){
 //========================================================================
 static void g_enable(void){
 	char xdata ret = 0, dev = 0, ch = 0;
-	uint8_t xdata d_state = 0, g_state, en_state = 0;
+	uint8_t d_state = 0, g_state = 0;
 	for(dev=0; dev<MAX_DEVICE; dev++){
 		uint8_t ret = 0, trys = 3;
 		do{
