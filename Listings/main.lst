@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   MAIN                                                              06/07/2018 09:51:48 PAGE 1   
+C51 COMPILER V9.57.0.0   MAIN                                                              06/07/2018 11:22:53 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE MAIN
@@ -62,7 +62,7 @@ line level    source
   52          void main(void){
   53   1        EAXSFR();
   54   1        PORT_INIT();
-C51 COMPILER V9.57.0.0   MAIN                                                              06/07/2018 09:51:48 PAGE 2   
+C51 COMPILER V9.57.0.0   MAIN                                                              06/07/2018 11:22:53 PAGE 2   
 
   55   1        TIMER1_config();
   56   1        WDG_config();

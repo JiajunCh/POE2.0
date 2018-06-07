@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   POE_M                                                             06/07/2018 09:51:48 PAGE 1   
+C51 COMPILER V9.57.0.0   POE_M                                                             06/07/2018 11:22:53 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE POE_M
@@ -62,7 +62,7 @@ line level    source
   52   1        pwrled_time = PWR_LED_STOP;     //pwrled off
   53   1        
   54   1        set_den(0);                     //set d disable
-C51 COMPILER V9.57.0.0   POE_M                                                             06/07/2018 09:51:48 PAGE 2   
+C51 COMPILER V9.57.0.0   POE_M                                                             06/07/2018 11:22:53 PAGE 2   
 
   55   1        
   56   1        state = 0xAA;
@@ -126,7 +126,7 @@ line level    source
  114   2          getg_tick = 0;
  115   2          if(0 != i2c_read(TT9980x_ADDR+g_slave, PWR_STATE, &state, 1))
  116   2            state = G_OFF<<0 | G_OFF<<1 | G_OFF<<2 | G_OFF<<3; //if i2c_err, then led_off
-C51 COMPILER V9.57.0.0   POE_M                                                             06/07/2018 09:51:48 PAGE 3   
+C51 COMPILER V9.57.0.0   POE_M                                                             06/07/2018 11:22:53 PAGE 3   
 
  117   2          if(G_ON != L_ON) state = ~state;
  118   2          for(ch=0; ch<MAX_CH; ch++)
@@ -190,7 +190,7 @@ line level    source
  176          // return:      closed flag
  177          // version:     V1.0, 2018-5-28
  178          //========================================================================
-C51 COMPILER V9.57.0.0   POE_M                                                             06/07/2018 09:51:48 PAGE 4   
+C51 COMPILER V9.57.0.0   POE_M                                                             06/07/2018 11:22:53 PAGE 4   
 
  179          static void g_disable(void){
  180   1        char xdata ret = 0, dev = 0, ch = 0;
@@ -254,7 +254,7 @@ line level    source
  238   4              return;
  239   4            }
  240   3          }
-C51 COMPILER V9.57.0.0   POE_M                                                             06/07/2018 09:51:48 PAGE 5   
+C51 COMPILER V9.57.0.0   POE_M                                                             06/07/2018 11:22:53 PAGE 5   
 
  241   2        }
  242   1      }
@@ -318,7 +318,7 @@ line level    source
  300   2        }
  301   1      }
  302          
-C51 COMPILER V9.57.0.0   POE_M                                                             06/07/2018 09:51:48 PAGE 6   
+C51 COMPILER V9.57.0.0   POE_M                                                             06/07/2018 11:22:53 PAGE 6   
 
 
 
