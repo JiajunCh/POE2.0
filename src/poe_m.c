@@ -1,4 +1,5 @@
 #include "i2c.h"
+#include "uart.h"
 #include "poe_m.h"
 #include "tt9980.h"
 #include "STC8xxxx.h"
@@ -114,6 +115,13 @@ void timeEv_getGsta(uint8_t tick){
 		getg_tick = 0;
 		if(0 != i2c_read(TT9980x_ADDR+g_slave, PWR_STATE, &state, 1))
 			state = G_OFF<<0 | G_OFF<<1 | G_OFF<<2 | G_OFF<<3; //if i2c_err, then led_off
+		//test
+		else{
+			TX1_write2buff('0'+g_slave);
+			TX1_write2buff('s');
+			TX1_write2buff('\n');
+		}
+		//test
 		if(G_ON != L_ON) state = ~state;
 		for(ch=0; ch<MAX_CH; ch++)
 			set_l(g_slave, ch, (bit)(state>>ch));

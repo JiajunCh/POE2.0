@@ -6,6 +6,7 @@
 uint8_t code CMD_Write[] = "write 1=";
 uint8_t code CMD_Read[] = "read 1=";
 uint8_t code CMD_Ver[] = "ver\n";
+uint8_t code CMD_Load[] = "#load\n";
 
 uint16_t xdata sdet = 0;
 
@@ -135,6 +136,11 @@ void UART1_RxProcess(void){
 	else if(0 == strncmp(RX1_Buffer, CMD_Read, strlen(CMD_Read))){
 		RX1_Write=0;
 		B_RX1_OK=0;
+	}
+	else if(0 == strncmp(RX1_Buffer, CMD_Load, strlen(CMD_Load))){
+		RX1_Write=0;
+		B_RX1_OK=0;
+		IAP_CONTR = 0x60;
 	}
 }
 

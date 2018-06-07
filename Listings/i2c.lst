@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   I2C                                                               06/07/2018 11:22:53 PAGE 1   
+C51 COMPILER V9.57.0.0   I2C                                                               06/07/2018 19:10:04 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE I2C
@@ -12,7 +12,7 @@ line level    source
    2          #include "STC8xxxx.H"
    3          #include "intrins.h"
    4          
-   5          #define I2C_OVERTIME  250
+   5          #define I2C_OVERTIME  (0xff)
    6          
    7          #define ERR_OT        0x01
    8          
@@ -23,7 +23,7 @@ line level    source
   13          static bit isma;        //¥Ê¥¢µÿ÷∑±Í÷æ
   14          
   15          static uint8_t xdata I2C_Reg[I2C_REGSIZE] = {0};
-  16          static uint8_t xdata I2C_err = 0;
+  16          static uint8_t I2C_err = 0;
   17          
   18          //========================================================================
   19          // function:    Wait
@@ -34,135 +34,135 @@ line level    source
   24          //========================================================================
   25          void Wait(void){
   26   1        uint8_t time = I2C_OVERTIME;
-  27   1        if(I2C_err) return;
-  28   1        while (!(I2CMSST & 0x40) && time--);
-  29   1        I2CMSST &= ~0x40;
-  30   1        if(time) I2C_err |= ERR_OT;
-  31   1      }
-  32          
-  33          //========================================================================
-  34          // function:    Start
-  35          // description: i2c general start signal
-  36          // parameter:   void
-  37          // return:      void
-  38          // version:     V2.0, 2018-4-24
-  39          //========================================================================
-  40          void Start(void){
-  41   1        if(I2C_err) return;
-  42   1        EAXSFR();
-  43   1        I2CMSCR = 0x01;     //set master cmd to general start signal
-  44   1        Wait();
-  45   1        EAXRAM();
-  46   1      }
-  47          
-  48          //========================================================================
-  49          // function:    SendData
-  50          // description: i2c sent _data
-  51          // parameter:   void
-  52          // return:      void
-  53          // version:     V2.0, 2018-4-24
-  54          //========================================================================
-C51 COMPILER V9.57.0.0   I2C                                                               06/07/2018 11:22:53 PAGE 2   
+  27   1        while (!(I2CMSST & 0x40) && time--);
+  28   1        I2CMSST &= ~0x40;
+  29   1        if(time) I2C_err |= ERR_OT;
+  30   1      }
+  31          
+  32          //========================================================================
+  33          // function:    Start
+  34          // description: i2c general start signal
+  35          // parameter:   void
+  36          // return:      void
+  37          // version:     V2.0, 2018-4-24
+  38          //========================================================================
+  39          void Start(void){
+  40   1      //  if(I2C_err) return;
+  41   1        EAXSFR();
+  42   1        I2CMSCR = 0x01;     //set master cmd to general start signal
+  43   1        Wait();
+  44   1        EAXRAM();
+  45   1      }
+  46          
+  47          //========================================================================
+  48          // function:    SendData
+  49          // description: i2c sent _data
+  50          // parameter:   void
+  51          // return:      void
+  52          // version:     V2.0, 2018-4-24
+  53          //========================================================================
+  54          void SendData(char dat){
+C51 COMPILER V9.57.0.0   I2C                                                               06/07/2018 19:10:04 PAGE 2   
 
-  55          void SendData(char dat){
-  56   1        if(I2C_err) return;
-  57   1        EAXSFR();
-  58   1        I2CTXD = dat;        //write _data to buf
-  59   1        I2CMSCR = 0x02;      //set master cmd to sent _data
-  60   1        Wait();
-  61   1        EAXRAM();
-  62   1      }
-  63          
-  64          //========================================================================
-  65          // function:    RecvACK
-  66          // description: i2c receive ack
-  67          // parameter:   void
-  68          // return:      void
-  69          // version:     V2.0, 2018-4-24
-  70          //========================================================================
-  71          void RecvACK(void){
-  72   1        if(I2C_err) return;
-  73   1        EAXSFR();
-  74   1        I2CMSCR = 0x03;      //set master cmd to sent ack
-  75   1        Wait();
-  76   1        EAXRAM();
-  77   1      }
-  78          
-  79          //========================================================================
-  80          // function:    RecvData
-  81          // description: i2c receive _data
-  82          // parameter:   void
-  83          // return:      void
-  84          // version:     V2.0, 2018-4-24
-  85          //========================================================================
-  86          char RecvData(void){
-  87   1        char rxd = 0;
-  88   1        if(I2C_err) return 0;
-  89   1        EAXSFR();
-  90   1        I2CMSCR = 0x04;      //set master cmd to receive _data
-  91   1        Wait();
-  92   1        rxd = I2CRXD;
-  93   1        EAXRAM();
-  94   1        return rxd;
-  95   1      }
-  96          
-  97          //========================================================================
-  98          // function:    SendACK
-  99          // description: i2c sent ack
- 100          // parameter:   void
- 101          // return:      void
- 102          // version:     V2.0, 2018-4-24
- 103          //========================================================================
- 104          void SendACK(void){
- 105   1        if(I2C_err) return;
- 106   1        EAXSFR();
- 107   1        I2CMSST = 0x00;       //set ack
- 108   1        I2CMSCR = 0x05;       //set master cmd to sent
- 109   1        Wait();
- 110   1        EAXRAM();
- 111   1      }
- 112          
- 113          //========================================================================
- 114          // function:    SendNAK
- 115          // description: i2c sent nak
- 116          // parameter:   void
-C51 COMPILER V9.57.0.0   I2C                                                               06/07/2018 11:22:53 PAGE 3   
+  55   1      //  if(I2C_err) return;
+  56   1        EAXSFR();
+  57   1        I2CTXD = dat;        //write _data to buf
+  58   1        I2CMSCR = 0x02;      //set master cmd to sent _data
+  59   1        Wait();
+  60   1        EAXRAM();
+  61   1      }
+  62          
+  63          //========================================================================
+  64          // function:    RecvACK
+  65          // description: i2c receive ack
+  66          // parameter:   void
+  67          // return:      void
+  68          // version:     V2.0, 2018-4-24
+  69          //========================================================================
+  70          void RecvACK(void){
+  71   1      //  if(I2C_err) return;
+  72   1        EAXSFR();
+  73   1        I2CMSCR = 0x03;      //set master cmd to sent ack
+  74   1        Wait();
+  75   1        EAXRAM();
+  76   1      }
+  77          
+  78          //========================================================================
+  79          // function:    RecvData
+  80          // description: i2c receive _data
+  81          // parameter:   void
+  82          // return:      void
+  83          // version:     V2.0, 2018-4-24
+  84          //========================================================================
+  85          char RecvData(void){
+  86   1        char rxd = 0;
+  87   1      //  if(I2C_err) return 0;
+  88   1        EAXSFR();
+  89   1        I2CMSCR = 0x04;      //set master cmd to receive _data
+  90   1        Wait();
+  91   1        rxd = I2CRXD;
+  92   1        EAXRAM();
+  93   1        return rxd;
+  94   1      }
+  95          
+  96          //========================================================================
+  97          // function:    SendACK
+  98          // description: i2c sent ack
+  99          // parameter:   void
+ 100          // return:      void
+ 101          // version:     V2.0, 2018-4-24
+ 102          //========================================================================
+ 103          void SendACK(void){
+ 104   1      //  if(I2C_err) return;
+ 105   1        EAXSFR();
+ 106   1        I2CMSST = 0x00;       //set ack
+ 107   1        I2CMSCR = 0x05;       //set master cmd to sent
+ 108   1        Wait();
+ 109   1        EAXRAM();
+ 110   1      }
+ 111          
+ 112          //========================================================================
+ 113          // function:    SendNAK
+ 114          // description: i2c sent nak
+ 115          // parameter:   void
+ 116          // return:      void
+C51 COMPILER V9.57.0.0   I2C                                                               06/07/2018 19:10:04 PAGE 3   
 
- 117          // return:      void
- 118          // version:     V2.0, 2018-4-24
- 119          //========================================================================
- 120          void SendNAK(void){
- 121   1        if(I2C_err) return;
- 122   1        EAXSFR();
- 123   1        I2CMSST = 0x01;         //set nak
- 124   1        I2CMSCR = 0x05;         //set master cmd to sent
- 125   1        Wait();
- 126   1        EAXRAM();
- 127   1      }
- 128          
- 129          //========================================================================
- 130          // function:    Stop
- 131          // description: i2c general start signal
- 132          // parameter:   void
- 133          // return:      void
- 134          // version:     V2.0, 2018-4-24
- 135          //========================================================================
- 136          void Stop(void){
- 137   1        EAXSFR();
- 138   1        I2CMSCR = 0x06;          //set master cmd to general stop signal
- 139   1        Wait();
- 140   1        EAXRAM();
- 141   1      }
- 142          
- 143          //========================================================================
- 144          // function:    i2c_config
- 145          // description: i2c config
- 146          // parameter:   void
- 147          // return:      void
- 148          // version:     V2.0, 2018-4-24
- 149          //========================================================================
- 150          void i2c_config(void){
- 151   1        EAXSFR();
+ 117          // version:     V2.0, 2018-4-24
+ 118          //========================================================================
+ 119          void SendNAK(void){
+ 120   1      //  if(I2C_err) return;
+ 121   1        EAXSFR();
+ 122   1        I2CMSST = 0x01;         //set nak
+ 123   1        I2CMSCR = 0x05;         //set master cmd to sent
+ 124   1        Wait();
+ 125   1        EAXRAM();
+ 126   1      }
+ 127          
+ 128          //========================================================================
+ 129          // function:    Stop
+ 130          // description: i2c general start signal
+ 131          // parameter:   void
+ 132          // return:      void
+ 133          // version:     V2.0, 2018-4-24
+ 134          //========================================================================
+ 135          void Stop(void){
+ 136   1        EAXSFR();
+ 137   1        I2CMSCR = 0x06;          //set master cmd to general stop signal
+ 138   1        Wait();
+ 139   1        EAXRAM();
+ 140   1      }
+ 141          
+ 142          //========================================================================
+ 143          // function:    i2c_config
+ 144          // description: i2c config
+ 145          // parameter:   void
+ 146          // return:      void
+ 147          // version:     V2.0, 2018-4-24
+ 148          //========================================================================
+ 149          void i2c_config(void){
+ 150   1        EAXSFR();
+ 151   1        P3PU |= 0x0C;
  152   1        P_SW2 |=  0x30;
  153   1        I2CCFG = 0xe0;            //enable i2c master
  154   1        I2CMSST = 0x00;
@@ -190,7 +190,7 @@ line level    source
  176   1        Stop();            //stop signal
  177   1        return I2C_err;
  178   1      }
-C51 COMPILER V9.57.0.0   I2C                                                               06/07/2018 11:22:53 PAGE 4   
+C51 COMPILER V9.57.0.0   I2C                                                               06/07/2018 19:10:04 PAGE 4   
 
  179          
  180          //========================================================================
@@ -249,12 +249,12 @@ line level    source
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    445    ----
+   CODE SIZE        =    402    ----
    CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =    129    ----
+   XDATA SIZE       =    128    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =   ----      12
-C51 COMPILER V9.57.0.0   I2C                                                               06/07/2018 11:22:53 PAGE 5   
+   DATA SIZE        =      1      12
+C51 COMPILER V9.57.0.0   I2C                                                               06/07/2018 19:10:04 PAGE 5   
 
    IDATA SIZE       =   ----    ----
    BIT SIZE         =      2    ----

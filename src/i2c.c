@@ -2,7 +2,7 @@
 #include "STC8xxxx.H"
 #include "intrins.h"
 
-#define I2C_OVERTIME	250
+#define I2C_OVERTIME	(0xff)
 
 #define ERR_OT				0x01
 
@@ -13,7 +13,7 @@ static bit isda;				//设备地址标志
 static bit isma;				//存储地址标志
 
 static uint8_t xdata I2C_Reg[I2C_REGSIZE] = {0};
-static uint8_t xdata I2C_err = 0;
+static uint8_t I2C_err = 0;
 
 //========================================================================
 // function: 		Wait
@@ -24,7 +24,6 @@ static uint8_t xdata I2C_err = 0;
 //========================================================================
 void Wait(void){
 	uint8_t time = I2C_OVERTIME;
-	if(I2C_err) return;
 	while (!(I2CMSST & 0x40) && time--);
 	I2CMSST &= ~0x40;
 	if(time) I2C_err |= ERR_OT;
@@ -38,7 +37,7 @@ void Wait(void){
 // version: 		V2.0, 2018-4-24
 //========================================================================
 void Start(void){
-	if(I2C_err) return;
+//	if(I2C_err) return;
 	EAXSFR();
 	I2CMSCR = 0x01;     //set master cmd to general start signal
 	Wait();
@@ -53,7 +52,7 @@ void Start(void){
 // version: 		V2.0, 2018-4-24
 //========================================================================
 void SendData(char dat){
-	if(I2C_err) return;
+//	if(I2C_err) return;
 	EAXSFR();
 	I2CTXD = dat;        //write _data to buf
 	I2CMSCR = 0x02;      //set master cmd to sent _data
@@ -69,7 +68,7 @@ void SendData(char dat){
 // version: 		V2.0, 2018-4-24
 //========================================================================
 void RecvACK(void){
-	if(I2C_err) return;
+//	if(I2C_err) return;
 	EAXSFR();
 	I2CMSCR = 0x03;      //set master cmd to sent ack
 	Wait();
@@ -85,7 +84,7 @@ void RecvACK(void){
 //========================================================================
 char RecvData(void){
 	char rxd = 0;
-	if(I2C_err) return 0;
+//	if(I2C_err) return 0;
 	EAXSFR();
 	I2CMSCR = 0x04;      //set master cmd to receive _data
 	Wait();
@@ -102,7 +101,7 @@ char RecvData(void){
 // version: 		V2.0, 2018-4-24
 //========================================================================
 void SendACK(void){
-	if(I2C_err) return;
+//	if(I2C_err) return;
 	EAXSFR();
 	I2CMSST = 0x00;       //set ack
 	I2CMSCR = 0x05;     	//set master cmd to sent
@@ -118,7 +117,7 @@ void SendACK(void){
 // version: 		V2.0, 2018-4-24
 //========================================================================
 void SendNAK(void){
-	if(I2C_err) return;
+//	if(I2C_err) return;
 	EAXSFR();
 	I2CMSST = 0x01;       	//set nak
 	I2CMSCR = 0x05;         //set master cmd to sent
@@ -149,6 +148,7 @@ void Stop(void){
 //========================================================================
 void i2c_config(void){
 	EAXSFR();
+	P3PU |= 0x0C;
 	P_SW2 |=  0x30;
 	I2CCFG = 0xe0;            //enable i2c master
 	I2CMSST = 0x00;

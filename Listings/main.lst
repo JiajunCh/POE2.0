@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   MAIN                                                              06/07/2018 11:22:53 PAGE 1   
+C51 COMPILER V9.57.0.0   MAIN                                                              06/07/2018 19:10:04 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE MAIN
@@ -48,8 +48,8 @@ line level    source
   38   1      #endif
   39   1        timeEv_getGsta(cnt_tick);
   40   1        timeEv_pwrled(cnt_tick);
-  41   1        timeEv_open_den(cnt_tick);
-  42   1        timeEv_getIU(cnt_tick);
+  41   1      //  timeEv_open_den(cnt_tick);
+  42   1      //  timeEv_getIU(cnt_tick);
   43   1      }
   44          
   45          //========================================================================
@@ -60,31 +60,30 @@ line level    source
   50          // version:     V2.0, 2018-4-24
   51          //========================================================================
   52          void main(void){
-  53   1        EAXSFR();
-  54   1        PORT_INIT();
-C51 COMPILER V9.57.0.0   MAIN                                                              06/07/2018 11:22:53 PAGE 2   
+  53   1        PORT_INIT();
+  54   1        TIMER1_config();
+C51 COMPILER V9.57.0.0   MAIN                                                              06/07/2018 19:10:04 PAGE 2   
 
-  55   1        TIMER1_config();
-  56   1        WDG_config();
-  57   1        i2c_config();
-  58   1      #if (DEBUG)
-  59   1        UART1_config();
-  60   1      #endif
-  61   1        EA = 1; //enable interuupt_
-  62   1        while(1){
-  63   2      #if (DEBUG)
-  64   2          UART1_RxProcess();
-  65   2          UART1_TxProcess();
-  66   2      #endif
-  67   2          timeEvent_Process(get_timer1tick());
-  68   2          WDG_freed();
-  69   2        }
-  70   1      }
-  71          
+  55   1        WDG_config();
+  56   1        i2c_config();
+  57   1      #if (DEBUG)
+  58   1        UART1_config();
+  59   1      #endif
+  60   1        EA = 1; //enable interuupt_
+  61   1        while(1){
+  62   2      #if (DEBUG)
+  63   2          UART1_RxProcess();
+  64   2          UART1_TxProcess();
+  65   2      #endif
+  66   2          timeEvent_Process(get_timer1tick());
+  67   2          WDG_freed();
+  68   2        }
+  69   1      }
+  70          
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    127    ----
+   CODE SIZE        =    114    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
