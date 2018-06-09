@@ -1,7 +1,10 @@
 #ifndef _TT9980_H_
 #define _TT9980_H_
 
-#define TT9980x_ADDR		(0x40)
+#define TT9980_1_4		(0x27)
+#define TT9980_5_8		(0x2B)
+#define TT9980_9_12		(0x2D)
+#define TT9980_13_16	(0x2E)
 
 /* TT9980 REG address */
 #define PWR_STATE		(0x10)	//r  Bit(0~3) == PWR_EN(1~4), Bit(4~7) == PGOOD(1~4)
@@ -25,7 +28,6 @@
 #define U4_L				(0x3E)	//r  low byte of voltage of port 4
 #define U4_H				(0x3F)	//r  hight byte of voltage of port 4
 
-void set_DET(unsigned char dev, unsigned char ch, unsigned char state);
 
 #endif
 

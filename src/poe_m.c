@@ -6,6 +6,8 @@
 
 static uint16_t xdata pwrled_time = 0;	//led flash time
 
+static uint8_t i2c_salve[MAX_DEVICE] = {TT9980_1_4, TT9980_5_8, TT9980_9_12, TT9980_13_16};
+
 static uint8_t xdata den_start = 0;			//d enable gradually satrt
 
 static void set_l(uint8_t dev, uint8_t ch, bit val);
@@ -58,7 +60,7 @@ void system_init(void){
 	for(dev=0; dev<MAX_DEVICE; dev++){	//set work mode
 		trys = 3;
 		do{
-			ret = i2c_write(TT9980x_ADDR+dev, WORK_MODE, &state, 1);
+			ret = i2c_write(i2c_salve[dev], WORK_MODE, &state, 1);
 		}while(ret && trys--);
 	}
 }
@@ -113,15 +115,8 @@ void timeEv_getGsta(uint8_t tick){
 	getg_tick += tick;
 	if(getg_tick > T_GET_G){
 		getg_tick = 0;
-		if(0 != i2c_read(TT9980x_ADDR+g_slave, PWR_STATE, &state, 1))
+		if(0 != i2c_read(i2c_salve[g_slave], PWR_STATE, &state, 1))
 			state = G_OFF<<0 | G_OFF<<1 | G_OFF<<2 | G_OFF<<3; //if i2c_err, then led_off
-		//test
-		else{
-			TX1_write2buff('0'+g_slave);
-			TX1_write2buff('s');
-			TX1_write2buff('\n');
-		}
-		//test
 		if(G_ON != L_ON) state = ~state;
 		for(ch=0; ch<MAX_CH; ch++)
 			set_l(g_slave, ch, (bit)(state>>ch));
@@ -147,7 +142,7 @@ void timeEv_getIU(uint8_t tick){
 		for(dev=0; dev<MAX_DEVICE; dev++){
 			uint8_t ret = 0;
 			uint8_t pbuf[U4_H-U1_L+1] = {0};
-			ret = i2c_read(TT9980x_ADDR+dev, I1_L, pbuf, U4_H-I1_L+1);
+			ret = i2c_read(i2c_salve[dev], I1_L, pbuf, U4_H-I1_L+1);
 			if(!ret){
 				for(ch=0; ch<MAX_CH; ch++)
 					sum_iu += (pbuf[ch<<2] | (pbuf[(ch<<2)+1]<<8));
@@ -190,7 +185,7 @@ static void g_disable(void){
 	for(dev=MAX_DEVICE-1; dev>=0; dev--){
 		uint8_t ret = 0, trys = 3;
 		do{
-			ret = i2c_read(TT9980x_ADDR+dev, PWR_STATE, &g_state, 1);
+			ret = i2c_read(i2c_salve[dev], PWR_STATE, &g_state, 1);
 		}while(ret && trys--);
 		if(ret) continue;
 		for(ch=MAX_CH-1; ch>=0; ch--){
@@ -198,16 +193,16 @@ static void g_disable(void){
 				close_state = (0x01<<ch)<<4;
 				trys = 3;
 				do{
-					ret = i2c_write(TT9980x_ADDR+dev, PWR_ON, &close_state, 1);
+					ret = i2c_write(i2c_salve[dev], PWR_ON, &close_state, 1);
 				}while(ret && trys--);
 				trys = 3;
 				do{
-					ret = i2c_read(TT9980x_ADDR+dev, DET_EN, &d_state, 1);
+					ret = i2c_read(i2c_salve[dev], DET_EN, &d_state, 1);
 				}while(ret && trys--);
 				d_state &= ~(0x11<<ch);
 				trys = 3;
 				do{
-					ret = i2c_write(TT9980x_ADDR+dev, DET_EN, &d_state, 1);
+					ret = i2c_write(i2c_salve[dev], DET_EN, &d_state, 1);
 				}while(ret && trys--);
 				return;
 			}
@@ -228,7 +223,7 @@ static void g_enable(void){
 	for(dev=0; dev<MAX_DEVICE; dev++){
 		uint8_t ret = 0, trys = 3;
 		do{
-			ret = i2c_read(TT9980x_ADDR+dev, DET_EN, &d_state, 1);
+			ret = i2c_read(i2c_salve[dev], DET_EN, &d_state, 1);
 		}while(ret && trys--);
 		if(ret) continue;
 		for(ch=0; ch<MAX_CH; ch++){
@@ -236,12 +231,12 @@ static void g_enable(void){
 				g_state = (0x01<<ch)<<4;
 				trys = 3;
 				do{
-					ret = i2c_write(TT9980x_ADDR+dev, PWR_ON, &g_state, 1);
+					ret = i2c_write(i2c_salve[dev], PWR_ON, &g_state, 1);
 				}while(ret && trys--);
 				d_state |= (0x11<<ch);
 				trys = 3;
 				do{
-					ret = i2c_write(TT9980x_ADDR+dev, DET_EN, &d_state, 1);
+					ret = i2c_write(i2c_salve[dev], DET_EN, &d_state, 1);
 				}while(ret && trys--);
 				return;
 			}
@@ -263,7 +258,7 @@ static void set_den(uint8_t sta){
 	den_flag = sta;
 	for(dev=0; dev<MAX_DEVICE; dev++){
 		do{
-			ret = i2c_write(TT9980x_ADDR+dev, DET_EN, &sta, 1);
+			ret = i2c_write(i2c_salve[dev], DET_EN, &sta, 1);
 		}while(ret && trys--);
 	}
 }
@@ -279,6 +274,7 @@ static void set_l(uint8_t dev, uint8_t ch, bit val){
 	uint8_t l = 0xff;
 	if(dev<MAX_DEVICE && ch<MAX_CH)
 		l = dev*MAX_CH+ch;
+	l+=7;
 	switch(l){
 		case 0:  L1 = val; break;
 		case 1:  L2 = val; break;

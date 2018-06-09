@@ -186,10 +186,13 @@ uint8_t i2c_write(uint8_t addr, uint8_t reg, uint8_t* pbuf, uint8_t len){
 //========================================================================
 uint8_t i2c_read(uint8_t addr, uint8_t reg, uint8_t* pbuf, uint8_t len){
 	I2C_err = 0;
+	Start();           //start signal
+	SendData(addr<<1); //dev_addr<<1 + w
+	RecvACK();
+	SendData(reg);     //mem_addr
+	RecvACK();
 	Start();                 	//start signal
 	SendData((addr<<1)+1);   	//dev_addr<<1 + r
-	RecvACK();
-	SendData(reg);            //mem_addr
 	RecvACK();
 	for(; len>1; len--){
 		*pbuf++ = RecvData();   //read _data
@@ -200,33 +203,3 @@ uint8_t i2c_read(uint8_t addr, uint8_t reg, uint8_t* pbuf, uint8_t len){
 	Stop();                   //stop signal
 	return I2C_err;
 }
-
-void test(void){
-	Start();                                    //发送起始命令
-	SendData(0x5a);                             //发送设备地址+写命令
-	RecvACK();
-	SendData(0x00);                             //发送存储地址
-	RecvACK();
-	SendData(0x12);                             //写测试数据1
-	RecvACK();
-	SendData(0x78);                             //写测试数据2
-	RecvACK();
-	Stop();                                     //发送停止命令
-
-	Start();                                    //发送起始命令
-	SendData(0x5a);                             //发送设备地址+写命令
-	RecvACK();
-	SendData(0x00);                             //发送存储地址高字节
-	RecvACK();
-	Start();                                    //发送起始命令
-	SendData(0x5b);                             //发送设备地址+读命令
-	RecvACK();
-	P0 = RecvData();                            //读取数据1
-	SendACK();
-	P2 = RecvData();                            //读取数据2
-	SendNAK();
-	Stop();                                     //发送停止命令
-	while (1);
-}
-
-

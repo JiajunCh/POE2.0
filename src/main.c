@@ -38,8 +38,8 @@ void timeEvent_Process(uint8_t new_tick){
 #endif
 	timeEv_getGsta(cnt_tick);
 	timeEv_pwrled(cnt_tick);
-//	timeEv_open_den(cnt_tick);
-//	timeEv_getIU(cnt_tick);
+	timeEv_open_den(cnt_tick);
+	timeEv_getIU(cnt_tick);
 }
 
 //========================================================================

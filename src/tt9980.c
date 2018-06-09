@@ -1,7 +1,7 @@
 #include "tt9980.h"
 #include "i2c.h"
 #include "STC8xxxx.H"
-
+/*
 void set_DET(uint8_t dev, uint8_t ch, uint8_t state){
 	uint8_t old_state = 0, ret = 0, trys = 3;
 	do{
@@ -20,3 +20,4 @@ void set_DET(uint8_t dev, uint8_t ch, uint8_t state){
 		}while(ret && trys--);
 	}
 }
+*/

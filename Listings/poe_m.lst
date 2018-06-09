@@ -1,10 +1,10 @@
-C51 COMPILER V9.57.0.0   POE_M                                                             06/07/2018 19:10:04 PAGE 1   
+C51 COMPILER V9.57.0.0   POE_M                                                             06/09/2018 21:15:15 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE POE_M
 OBJECT MODULE PLACED IN .\Objects\poe_m.obj
-COMPILER INVOKED BY: D:\keil4_c51\C51\BIN\C51.EXE src\poe_m.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\inc) DEBUG OBJECTEXTEND 
-                    -PRINT(.\Listings\poe_m.lst) TABS(2) OBJECT(.\Objects\poe_m.obj)
+COMPILER INVOKED BY: D:\Keil_v5_957\C51\BIN\C51.EXE src\poe_m.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\inc) DEBUG OBJECTEXTEN
+                    -D PRINT(.\Listings\poe_m.lst) TABS(2) OBJECT(.\Objects\poe_m.obj)
 
 line level    source
 
@@ -16,326 +16,322 @@ line level    source
    6          
    7          static uint16_t xdata pwrled_time = 0;  //led flash time
    8          
-   9          static uint8_t xdata den_start = 0;     //d enable gradually satrt
+   9          static uint8_t i2c_salve[MAX_DEVICE] = {TT9980_1_4, TT9980_5_8, TT9980_9_12, TT9980_13_16};
   10          
-  11          static void set_l(uint8_t dev, uint8_t ch, bit val);
-  12          static void g_disable(void);
-  13          static void g_enable(void);
-  14          static void set_den(uint8_t sta);
-  15          
-  16          //========================================================================
-  17          // function:    WDG_config
-  18          // description: start wdg
-  19          // parameter:   void
-  20          // return:      void
-  21          // version:     V1.0, 2018-1-11
-  22          //========================================================================
-  23          void WDG_config(void){
-  24   1        WDT_CONTR = D_EN_WDT | D_WDT_SCALE_128;
-  25   1      }
-  26          
-  27          //========================================================================
-  28          // function:    WDG_freed
-  29          // description: wdg clear
-  30          // parameter:   void
-  31          // return:      void
-  32          // version:     V1.0, 2018-1-11
-  33          //========================================================================
-  34          void WDG_freed(void){
-  35   1        WDT_CONTR |= D_CLR_WDT;
-  36   1      }
-  37          
-  38          //========================================================================
-  39          // function:    system_init
-  40          // description: system init state
-  41          // parameter:   void
-  42          // return:      void
-  43          // version:     V1.0, 2018-5-28
-  44          //========================================================================
-  45          void system_init(void){
-  46   1        uint8_t xdata dev=0, ch=0, state = 0;
-  47   1        uint8_t xdata ret = 0, trys = 3;
-  48   1        for(dev=0; dev<MAX_DEVICE; dev++)
-  49   1          for(ch=0; ch<MAX_CH; ch++)
-  50   1        set_l(dev, ch, L_OFF);          //led off : all 
-  51   1        
-  52   1        PWR_LED = PWR_LED_OFF;
-  53   1        pwrled_time = PWR_LED_STOP;     //pwrled off
-  54   1        
-C51 COMPILER V9.57.0.0   POE_M                                                             06/07/2018 19:10:04 PAGE 2   
+  11          static uint8_t xdata den_start = 0;     //d enable gradually satrt
+  12          
+  13          static void set_l(uint8_t dev, uint8_t ch, bit val);
+  14          static void g_disable(void);
+  15          static void g_enable(void);
+  16          static void set_den(uint8_t sta);
+  17          
+  18          //========================================================================
+  19          // function:    WDG_config
+  20          // description: start wdg
+  21          // parameter:   void
+  22          // return:      void
+  23          // version:     V1.0, 2018-1-11
+  24          //========================================================================
+  25          void WDG_config(void){
+  26   1        WDT_CONTR = D_EN_WDT | D_WDT_SCALE_128;
+  27   1      }
+  28          
+  29          //========================================================================
+  30          // function:    WDG_freed
+  31          // description: wdg clear
+  32          // parameter:   void
+  33          // return:      void
+  34          // version:     V1.0, 2018-1-11
+  35          //========================================================================
+  36          void WDG_freed(void){
+  37   1        WDT_CONTR |= D_CLR_WDT;
+  38   1      }
+  39          
+  40          //========================================================================
+  41          // function:    system_init
+  42          // description: system init state
+  43          // parameter:   void
+  44          // return:      void
+  45          // version:     V1.0, 2018-5-28
+  46          //========================================================================
+  47          void system_init(void){
+  48   1        uint8_t xdata dev=0, ch=0, state = 0;
+  49   1        uint8_t xdata ret = 0, trys = 3;
+  50   1        for(dev=0; dev<MAX_DEVICE; dev++)
+  51   1          for(ch=0; ch<MAX_CH; ch++)
+  52   1        set_l(dev, ch, L_OFF);          //led off : all 
+  53   1        
+  54   1        PWR_LED = PWR_LED_OFF;
+C51 COMPILER V9.57.0.0   POE_M                                                             06/09/2018 21:15:15 PAGE 2   
 
-  55   1        set_den(0);                     //set d disable
+  55   1        pwrled_time = PWR_LED_STOP;     //pwrled off
   56   1        
-  57   1        state = 0xAA;
-  58   1        for(dev=0; dev<MAX_DEVICE; dev++){  //set work mode
-  59   2          trys = 3;
-  60   2          do{
-  61   3            ret = i2c_write(TT9980x_ADDR+dev, WORK_MODE, &state, 1);
-  62   3          }while(ret && trys--);
-  63   2        }
-  64   1      }
-  65          
-  66          //========================================================================
-  67          // function:    timeEv_open_den
-  68          // description: d enable gradually
-  69          // parameter:   void
-  70          // return:      void
-  71          // version:     V1.0, 2018-5-28
-  72          //========================================================================
-  73          void timeEv_open_den(uint8_t tick){
-  74   1        static uint16_t xdata den_tick = 0;
-  75   1        if(den_start >= ALL_CH)
-  76   1          return;
-  77   1        den_tick += tick;
-  78   1        if(den_tick > T_EN_D){
-  79   2          g_enable();
-  80   2          den_start++;
-  81   2        }
-  82   1      }
-  83          
-  84          //========================================================================
-  85          // function:    timeEv_pwrled
-  86          // description: pwr led flash
-  87          // parameter:   tick
-  88          // return:      void
-  89          // version:     V2.0, 2018-4-25
-  90          //========================================================================
-  91          void timeEv_pwrled(uint8_t tick){
-  92   1        static uint16_t xdata pwrled_tick = 0;
-  93   1        pwrled_tick += tick;
-  94   1        if(PWR_LED_STOP == pwrled_time)
-  95   1          return;
-  96   1        if(pwrled_tick > pwrled_time){
-  97   2          pwrled_tick = 0;
-  98   2          PWR_LED = !PWR_LED;
-  99   2        }
- 100   1      }
- 101          
- 102          //========================================================================
- 103          // function:    timeEv_getGsta
- 104          // description: uart1 interrupt_ service handle
- 105          // parameter:   tick
- 106          // return:      void
- 107          // version:     V2.0, 2018-5-25
- 108          //========================================================================
- 109          void timeEv_getGsta(uint8_t tick){
- 110   1        static uint16_t xdata getg_tick = 0;
- 111   1        static uint8_t xdata g_slave = 0;
- 112   1        uint8_t state = 0, ch = 0;
- 113   1        getg_tick += tick;
- 114   1        if(getg_tick > T_GET_G){
- 115   2          getg_tick = 0;
- 116   2          if(0 != i2c_read(TT9980x_ADDR+g_slave, PWR_STATE, &state, 1))
-C51 COMPILER V9.57.0.0   POE_M                                                             06/07/2018 19:10:04 PAGE 3   
+  57   1        set_den(0);                     //set d disable
+  58   1        
+  59   1        state = 0xAA;
+  60   1        for(dev=0; dev<MAX_DEVICE; dev++){  //set work mode
+  61   2          trys = 3;
+  62   2          do{
+  63   3            ret = i2c_write(i2c_salve[dev], WORK_MODE, &state, 1);
+  64   3          }while(ret && trys--);
+  65   2        }
+  66   1      }
+  67          
+  68          //========================================================================
+  69          // function:    timeEv_open_den
+  70          // description: d enable gradually
+  71          // parameter:   void
+  72          // return:      void
+  73          // version:     V1.0, 2018-5-28
+  74          //========================================================================
+  75          void timeEv_open_den(uint8_t tick){
+  76   1        static uint16_t xdata den_tick = 0;
+  77   1        if(den_start >= ALL_CH)
+  78   1          return;
+  79   1        den_tick += tick;
+  80   1        if(den_tick > T_EN_D){
+  81   2          g_enable();
+  82   2          den_start++;
+  83   2        }
+  84   1      }
+  85          
+  86          //========================================================================
+  87          // function:    timeEv_pwrled
+  88          // description: pwr led flash
+  89          // parameter:   tick
+  90          // return:      void
+  91          // version:     V2.0, 2018-4-25
+  92          //========================================================================
+  93          void timeEv_pwrled(uint8_t tick){
+  94   1        static uint16_t xdata pwrled_tick = 0;
+  95   1        pwrled_tick += tick;
+  96   1        if(PWR_LED_STOP == pwrled_time)
+  97   1          return;
+  98   1        if(pwrled_tick > pwrled_time){
+  99   2          pwrled_tick = 0;
+ 100   2          PWR_LED = !PWR_LED;
+ 101   2        }
+ 102   1      }
+ 103          
+ 104          //========================================================================
+ 105          // function:    timeEv_getGsta
+ 106          // description: uart1 interrupt_ service handle
+ 107          // parameter:   tick
+ 108          // return:      void
+ 109          // version:     V2.0, 2018-5-25
+ 110          //========================================================================
+ 111          void timeEv_getGsta(uint8_t tick){
+ 112   1        static uint16_t xdata getg_tick = 0;
+ 113   1        static uint8_t xdata g_slave = 0;
+ 114   1        uint8_t state = 0, ch = 0;
+ 115   1        getg_tick += tick;
+ 116   1        if(getg_tick > T_GET_G){
+C51 COMPILER V9.57.0.0   POE_M                                                             06/09/2018 21:15:15 PAGE 3   
 
- 117   2            state = G_OFF<<0 | G_OFF<<1 | G_OFF<<2 | G_OFF<<3; //if i2c_err, then led_off
- 118   2          //test
- 119   2          else{
- 120   3            TX1_write2buff('0'+g_slave);
- 121   3            TX1_write2buff('s');
- 122   3            TX1_write2buff('\n');
- 123   3          }
- 124   2          //test
- 125   2          if(G_ON != L_ON) state = ~state;
- 126   2          for(ch=0; ch<MAX_CH; ch++)
- 127   2            set_l(g_slave, ch, (bit)(state>>ch));
- 128   2          if(++g_slave >= MAX_DEVICE)
- 129   2            g_slave = 0;
- 130   2        }
- 131   1      }
- 132          
- 133          //========================================================================
- 134          // function:    timeEv_getIU
- 135          // description: get slave current and voltage
- 136          // parameter:   tick
- 137          // return:      void
- 138          // version:     V2.0, 2018-5-25
- 139          //========================================================================
- 140          void timeEv_getIU(uint8_t tick){
- 141   1        static uint16_t xdata getiu_tick = 0;
- 142   1        getiu_tick += tick;
- 143   1        if(getiu_tick > T_GET_IU){
- 144   2          uint8_t dev = 0, ch = 0;
- 145   2          uint32_t sum_iu = 0;
- 146   2          getiu_tick = 0;
- 147   2          for(dev=0; dev<MAX_DEVICE; dev++){
- 148   3            uint8_t ret = 0;
- 149   3            uint8_t pbuf[U4_H-U1_L+1] = {0};
- 150   3            ret = i2c_read(TT9980x_ADDR+dev, I1_L, pbuf, U4_H-I1_L+1);
- 151   3            if(!ret){
- 152   4              for(ch=0; ch<MAX_CH; ch++)
- 153   4                sum_iu += (pbuf[ch<<2] | (pbuf[(ch<<2)+1]<<8));
- 154   4            }
+ 117   2          getg_tick = 0;
+ 118   2          if(0 != i2c_read(i2c_salve[g_slave], PWR_STATE, &state, 1))
+ 119   2            state = G_OFF<<0 | G_OFF<<1 | G_OFF<<2 | G_OFF<<3; //if i2c_err, then led_off
+ 120   2          if(G_ON != L_ON) state = ~state;
+ 121   2          for(ch=0; ch<MAX_CH; ch++)
+ 122   2            set_l(g_slave, ch, (bit)(state>>ch));
+ 123   2          if(++g_slave >= MAX_DEVICE)
+ 124   2            g_slave = 0;
+ 125   2        }
+ 126   1      }
+ 127          
+ 128          //========================================================================
+ 129          // function:    timeEv_getIU
+ 130          // description: get slave current and voltage
+ 131          // parameter:   tick
+ 132          // return:      void
+ 133          // version:     V2.0, 2018-5-25
+ 134          //========================================================================
+ 135          void timeEv_getIU(uint8_t tick){
+ 136   1        static uint16_t xdata getiu_tick = 0;
+ 137   1        getiu_tick += tick;
+ 138   1        if(getiu_tick > T_GET_IU){
+ 139   2          uint8_t dev = 0, ch = 0;
+ 140   2          uint32_t sum_iu = 0;
+ 141   2          getiu_tick = 0;
+ 142   2          for(dev=0; dev<MAX_DEVICE; dev++){
+ 143   3            uint8_t ret = 0;
+ 144   3            uint8_t pbuf[U4_H-U1_L+1] = {0};
+ 145   3            ret = i2c_read(i2c_salve[dev], I1_L, pbuf, U4_H-I1_L+1);
+ 146   3            if(!ret){
+ 147   4              for(ch=0; ch<MAX_CH; ch++)
+ 148   4                sum_iu += (pbuf[ch<<2] | (pbuf[(ch<<2)+1]<<8));
+ 149   4            }
+ 150   3          }
+ 151   2          if(sum_iu > IU_MAX){          // >100%
+ 152   3            g_disable();                // g_off + d_off : one
+ 153   3            den_start = ALL_CH;
+ 154   3            pwrled_time = PWR_LED_MAX;
  155   3          }
- 156   2          if(sum_iu > IU_MAX){          // >100%
- 157   3            g_disable();                // g_off + d_off : one
+ 156   2          else if(sum_iu > IU_MID){     // >90%
+ 157   3            set_den(0);                 // d_off : all
  158   3            den_start = ALL_CH;
- 159   3            pwrled_time = PWR_LED_MAX;
+ 159   3            pwrled_time = PWR_LED_FAST;
  160   3          }
- 161   2          else if(sum_iu > IU_MID){     // >90%
+ 161   2          else if(sum_iu > IU_NOR){     // >75%
  162   3            set_den(0);                 // d_off : all
  163   3            den_start = ALL_CH;
- 164   3            pwrled_time = PWR_LED_FAST;
+ 164   3            pwrled_time = PWR_LED_SLOW;
  165   3          }
- 166   2          else if(sum_iu > IU_NOR){     // >75%
- 167   3            set_den(0);                 // d_off : all
- 168   3            den_start = ALL_CH;
- 169   3            pwrled_time = PWR_LED_SLOW;
- 170   3          }
- 171   2          else{                         // <=75%
- 172   3            if(den_start<ALL_CH) return;
- 173   3            g_enable();                 // g_on + d_on : one
- 174   3            pwrled_time = PWR_LED_STOP;
- 175   3            PWR_LED = PWR_LED_OFF;
- 176   3          }
- 177   2        }
- 178   1      }
-C51 COMPILER V9.57.0.0   POE_M                                                             06/07/2018 19:10:04 PAGE 4   
+ 166   2          else{                         // <=75%
+ 167   3            if(den_start<ALL_CH) return;
+ 168   3            g_enable();                 // g_on + d_on : one
+ 169   3            pwrled_time = PWR_LED_STOP;
+ 170   3            PWR_LED = PWR_LED_OFF;
+ 171   3          }
+ 172   2        }
+ 173   1      }
+ 174          
+ 175          //========================================================================
+ 176          // function:    g_disable
+ 177          // description: close gate witch is ON and lower previlige
+ 178          // parameter:   void
+C51 COMPILER V9.57.0.0   POE_M                                                             06/09/2018 21:15:15 PAGE 4   
 
- 179          
- 180          //========================================================================
- 181          // function:    g_disable
- 182          // description: close gate witch is ON and lower previlige
- 183          // parameter:   void
- 184          // return:      closed flag
- 185          // version:     V1.0, 2018-5-28
- 186          //========================================================================
- 187          static void g_disable(void){
- 188   1        char xdata ret = 0, dev = 0, ch = 0;
- 189   1        uint8_t g_state = 0, d_state = 0, close_state = 0;
- 190   1        for(dev=MAX_DEVICE-1; dev>=0; dev--){
- 191   2          uint8_t ret = 0, trys = 3;
- 192   2          do{
- 193   3            ret = i2c_read(TT9980x_ADDR+dev, PWR_STATE, &g_state, 1);
- 194   3          }while(ret && trys--);
- 195   2          if(ret) continue;
- 196   2          for(ch=MAX_CH-1; ch>=0; ch--){
- 197   3            if((g_state>>ch)&0x01 == G_ON){
- 198   4              close_state = (0x01<<ch)<<4;
- 199   4              trys = 3;
- 200   4              do{
- 201   5                ret = i2c_write(TT9980x_ADDR+dev, PWR_ON, &close_state, 1);
- 202   5              }while(ret && trys--);
+ 179          // return:      closed flag
+ 180          // version:     V1.0, 2018-5-28
+ 181          //========================================================================
+ 182          static void g_disable(void){
+ 183   1        char xdata ret = 0, dev = 0, ch = 0;
+ 184   1        uint8_t g_state = 0, d_state = 0, close_state = 0;
+ 185   1        for(dev=MAX_DEVICE-1; dev>=0; dev--){
+ 186   2          uint8_t ret = 0, trys = 3;
+ 187   2          do{
+ 188   3            ret = i2c_read(i2c_salve[dev], PWR_STATE, &g_state, 1);
+ 189   3          }while(ret && trys--);
+ 190   2          if(ret) continue;
+ 191   2          for(ch=MAX_CH-1; ch>=0; ch--){
+ 192   3            if((g_state>>ch)&0x01 == G_ON){
+ 193   4              close_state = (0x01<<ch)<<4;
+ 194   4              trys = 3;
+ 195   4              do{
+ 196   5                ret = i2c_write(i2c_salve[dev], PWR_ON, &close_state, 1);
+ 197   5              }while(ret && trys--);
+ 198   4              trys = 3;
+ 199   4              do{
+ 200   5                ret = i2c_read(i2c_salve[dev], DET_EN, &d_state, 1);
+ 201   5              }while(ret && trys--);
+ 202   4              d_state &= ~(0x11<<ch);
  203   4              trys = 3;
  204   4              do{
- 205   5                ret = i2c_read(TT9980x_ADDR+dev, DET_EN, &d_state, 1);
+ 205   5                ret = i2c_write(i2c_salve[dev], DET_EN, &d_state, 1);
  206   5              }while(ret && trys--);
- 207   4              d_state &= ~(0x11<<ch);
- 208   4              trys = 3;
- 209   4              do{
- 210   5                ret = i2c_write(TT9980x_ADDR+dev, DET_EN, &d_state, 1);
- 211   5              }while(ret && trys--);
- 212   4              return;
- 213   4            }
- 214   3          }
- 215   2        }
- 216   1      }
- 217          
- 218          //========================================================================
- 219          // function:    g_enable
- 220          // description: open gate witch is OFF and higher previlige
- 221          // parameter:   void
- 222          // return:      closed flag
- 223          // version:     V1.0, 2018-5-28
- 224          //========================================================================
- 225          static void g_enable(void){
- 226   1        char xdata ret = 0, dev = 0, ch = 0;
- 227   1        uint8_t d_state = 0, g_state = 0;
- 228   1        for(dev=0; dev<MAX_DEVICE; dev++){
- 229   2          uint8_t ret = 0, trys = 3;
- 230   2          do{
- 231   3            ret = i2c_read(TT9980x_ADDR+dev, DET_EN, &d_state, 1);
- 232   3          }while(ret && trys--);
- 233   2          if(ret) continue;
- 234   2          for(ch=0; ch<MAX_CH; ch++){
- 235   3            if(((d_state>>ch)&0x01) == 0){
- 236   4              g_state = (0x01<<ch)<<4;
+ 207   4              return;
+ 208   4            }
+ 209   3          }
+ 210   2        }
+ 211   1      }
+ 212          
+ 213          //========================================================================
+ 214          // function:    g_enable
+ 215          // description: open gate witch is OFF and higher previlige
+ 216          // parameter:   void
+ 217          // return:      closed flag
+ 218          // version:     V1.0, 2018-5-28
+ 219          //========================================================================
+ 220          static void g_enable(void){
+ 221   1        char xdata ret = 0, dev = 0, ch = 0;
+ 222   1        uint8_t d_state = 0, g_state = 0;
+ 223   1        for(dev=0; dev<MAX_DEVICE; dev++){
+ 224   2          uint8_t ret = 0, trys = 3;
+ 225   2          do{
+ 226   3            ret = i2c_read(i2c_salve[dev], DET_EN, &d_state, 1);
+ 227   3          }while(ret && trys--);
+ 228   2          if(ret) continue;
+ 229   2          for(ch=0; ch<MAX_CH; ch++){
+ 230   3            if(((d_state>>ch)&0x01) == 0){
+ 231   4              g_state = (0x01<<ch)<<4;
+ 232   4              trys = 3;
+ 233   4              do{
+ 234   5                ret = i2c_write(i2c_salve[dev], PWR_ON, &g_state, 1);
+ 235   5              }while(ret && trys--);
+ 236   4              d_state |= (0x11<<ch);
  237   4              trys = 3;
  238   4              do{
- 239   5                ret = i2c_write(TT9980x_ADDR+dev, PWR_ON, &g_state, 1);
+ 239   5                ret = i2c_write(i2c_salve[dev], DET_EN, &d_state, 1);
  240   5              }while(ret && trys--);
-C51 COMPILER V9.57.0.0   POE_M                                                             06/07/2018 19:10:04 PAGE 5   
+C51 COMPILER V9.57.0.0   POE_M                                                             06/09/2018 21:15:15 PAGE 5   
 
- 241   4              d_state |= (0x11<<ch);
- 242   4              trys = 3;
- 243   4              do{
- 244   5                ret = i2c_write(TT9980x_ADDR+dev, DET_EN, &d_state, 1);
- 245   5              }while(ret && trys--);
- 246   4              return;
- 247   4            }
- 248   3          }
- 249   2        }
- 250   1      }
- 251          
- 252          //========================================================================
- 253          // function:    set_den
- 254          // description: set d enable / disable
- 255          // parameter:   void
- 256          // return:      void
- 257          // version:     V1.0, 2018-5-28
- 258          //========================================================================
- 259          static void set_den(uint8_t sta){
- 260   1        uint8_t xdata dev = 0, ret = 0, trys = 3;
- 261   1        static uint8_t xdata den_flag = 0;    //d flag
- 262   1        if(den_flag == sta) return;
- 263   1        den_flag = sta;
- 264   1        for(dev=0; dev<MAX_DEVICE; dev++){
- 265   2          do{
- 266   3            ret = i2c_write(TT9980x_ADDR+dev, DET_EN, &sta, 1);
- 267   3          }while(ret && trys--);
- 268   2        }
- 269   1      }
- 270          
- 271          //========================================================================
- 272          // function:    set_l
- 273          // description: set led on/off
- 274          // parameter:   device, channel, state
- 275          // return:      void
- 276          // version:     V2.0, 2018-5-25
- 277          //========================================================================
- 278          static void set_l(uint8_t dev, uint8_t ch, bit val){
- 279   1        uint8_t l = 0xff;
- 280   1        if(dev<MAX_DEVICE && ch<MAX_CH)
- 281   1          l = dev*MAX_CH+ch;
- 282   1        switch(l){
- 283   2          case 0:  L1 = val; break;
- 284   2          case 1:  L2 = val; break;
- 285   2          case 2:  L3 = val; break;
- 286   2          case 3:  L4 = val; break;
- 287   2          case 4:  L5 = val; break;
- 288   2          case 5:  L6 = val; break;
- 289   2          case 6:  L7 = val; break;
- 290   2          case 7:  L8 = val; break;
- 291   2          case 8:  L9 = val; break;
- 292   2          case 9:  L10 = val; break;
- 293   2          case 10: L11 = val; break;
- 294   2          case 11: L12 = val; break;
- 295   2          case 12: L13 = val; break;
- 296   2          case 13: L14 = val; break;
- 297   2          case 14: L15 = val; break;
- 298   2          case 15: L16 = val; break;
- 299   2          case 16: L17 = val; break;
- 300   2          case 17: L18 = val; break;
- 301   2          case 18: L19 = val; break;
- 302   2          case 19: L20 = val; break;
-C51 COMPILER V9.57.0.0   POE_M                                                             06/07/2018 19:10:04 PAGE 6   
+ 241   4              return;
+ 242   4            }
+ 243   3          }
+ 244   2        }
+ 245   1      }
+ 246          
+ 247          //========================================================================
+ 248          // function:    set_den
+ 249          // description: set d enable / disable
+ 250          // parameter:   void
+ 251          // return:      void
+ 252          // version:     V1.0, 2018-5-28
+ 253          //========================================================================
+ 254          static void set_den(uint8_t sta){
+ 255   1        uint8_t xdata dev = 0, ret = 0, trys = 3;
+ 256   1        static uint8_t xdata den_flag = 0;    //d flag
+ 257   1        if(den_flag == sta) return;
+ 258   1        den_flag = sta;
+ 259   1        for(dev=0; dev<MAX_DEVICE; dev++){
+ 260   2          do{
+ 261   3            ret = i2c_write(i2c_salve[dev], DET_EN, &sta, 1);
+ 262   3          }while(ret && trys--);
+ 263   2        }
+ 264   1      }
+ 265          
+ 266          //========================================================================
+ 267          // function:    set_l
+ 268          // description: set led on/off
+ 269          // parameter:   device, channel, state
+ 270          // return:      void
+ 271          // version:     V2.0, 2018-5-25
+ 272          //========================================================================
+ 273          static void set_l(uint8_t dev, uint8_t ch, bit val){
+ 274   1        uint8_t l = 0xff;
+ 275   1        if(dev<MAX_DEVICE && ch<MAX_CH)
+ 276   1          l = dev*MAX_CH+ch;
+ 277   1        l+=7;
+ 278   1        switch(l){
+ 279   2          case 0:  L1 = val; break;
+ 280   2          case 1:  L2 = val; break;
+ 281   2          case 2:  L3 = val; break;
+ 282   2          case 3:  L4 = val; break;
+ 283   2          case 4:  L5 = val; break;
+ 284   2          case 5:  L6 = val; break;
+ 285   2          case 6:  L7 = val; break;
+ 286   2          case 7:  L8 = val; break;
+ 287   2          case 8:  L9 = val; break;
+ 288   2          case 9:  L10 = val; break;
+ 289   2          case 10: L11 = val; break;
+ 290   2          case 11: L12 = val; break;
+ 291   2          case 12: L13 = val; break;
+ 292   2          case 13: L14 = val; break;
+ 293   2          case 14: L15 = val; break;
+ 294   2          case 15: L16 = val; break;
+ 295   2          case 16: L17 = val; break;
+ 296   2          case 17: L18 = val; break;
+ 297   2          case 18: L19 = val; break;
+ 298   2          case 19: L20 = val; break;
+ 299   2          case 20: L21 = val; break;
+ 300   2          case 21: L22 = val; break;
+ 301   2          case 22: L23 = val; break;
+ 302   2          case 23: L24 = val; break;
+C51 COMPILER V9.57.0.0   POE_M                                                             06/09/2018 21:15:15 PAGE 6   
 
- 303   2          case 20: L21 = val; break;
- 304   2          case 21: L22 = val; break;
- 305   2          case 22: L23 = val; break;
- 306   2          case 23: L24 = val; break;
- 307   2          default:break;
- 308   2        }
- 309   1      }
- 310          
+ 303   2          default:break;
+ 304   2        }
+ 305   1      }
+ 306          
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   1546    ----
+   CODE SIZE        =   1552    ----
    CONSTANT SIZE    =     14    ----
    XDATA SIZE       =     13      14
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =   ----      33
+   DATA SIZE        =      4      33
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----       1
 END OF MODULE INFORMATION.
