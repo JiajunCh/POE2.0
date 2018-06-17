@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   UART                                                              06/09/2018 21:15:15 PAGE 1   
+C51 COMPILER V9.57.0.0   UART                                                              06/17/2018 19:42:40 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE UART
@@ -62,7 +62,7 @@ line level    source
   52          void  UART1_config(void){
   53   1        /*********** timer2 for baudrate *****************/
   54   1        AUXR |= 0x01;   //S1 BRT Use Timer2;
-C51 COMPILER V9.57.0.0   UART                                                              06/09/2018 21:15:15 PAGE 2   
+C51 COMPILER V9.57.0.0   UART                                                              06/17/2018 19:42:40 PAGE 2   
 
   55   1        SetTimer2Baudrate(65536UL - (MAIN_Fosc>>2) / Baudrate1);
   56   1      
@@ -126,7 +126,7 @@ line level    source
  112   1      }
  113          
  114          //========================================================================
-C51 COMPILER V9.57.0.0   UART                                                              06/09/2018 21:15:15 PAGE 3   
+C51 COMPILER V9.57.0.0   UART                                                              06/17/2018 19:42:40 PAGE 3   
 
  115          // function:    UART1_RxProcess
  116          // description: check cmd to process
@@ -144,84 +144,104 @@ line level    source
  128   2          PrintString1(HW_VER);
  129   2          PrintString1(__DATE__"\n");
  130   2          PrintString1(__TIME__"\n");
- 131   2        }
- 132   1        else if(0 == strncmp(RX1_Buffer, CMD_Write, strlen(CMD_Write))){
- 133   2          RX1_Write=0;
- 134   2          B_RX1_OK=0;
- 135   2        }
- 136   1        else if(0 == strncmp(RX1_Buffer, CMD_Read, strlen(CMD_Read))){
- 137   2          RX1_Write=0;
- 138   2          B_RX1_OK=0;
- 139   2        }
- 140   1        else if(0 == strncmp(RX1_Buffer, CMD_Load, strlen(CMD_Load))){
- 141   2          RX1_Write=0;
- 142   2          B_RX1_OK=0;
- 143   2          IAP_CONTR = 0x60;
- 144   2        }
- 145   1      }
- 146          
- 147          //========================================================================
- 148          // function:    UART1_TxProcess
- 149          // description: check data_ to send in infinite loop
- 150          // parameter:   void
- 151          // return:      void
- 152          // version:     V1.0, 2018-1-11
- 153          //========================================================================
- 154          void UART1_TxProcess(void){
- 155   1        if((TX1_Read != TX1_Write) && (!B_TX1_Busy)){ //have data_ && uart idle
- 156   2          SBUF = TX1_Buffer[TX1_Read];
- 157   2          B_TX1_Busy = 1;
- 158   2          if(++TX1_Read >= TX1_LENGTH)
- 159   2            TX1_Read = 0;
- 160   2        }
- 161   1      }
- 162          
- 163          //========================================================================
- 164          // function:    TX1_write2buff(uint8_t dat)
- 165          // description: write data_ in buffer to wait send
- 166          // parameter:   byte data_
- 167          // return:      void
- 168          // version:     V1.0, 2018-1-11
- 169          //========================================================================
- 170          void TX1_write2buff(uint8_t dat){
- 171   1        TX1_Buffer[TX1_Write] = dat;
- 172   1        if(++TX1_Write >= TX1_LENGTH)
- 173   1          TX1_Write = 0;
- 174   1      }
- 175          
- 176          //========================================================================
-C51 COMPILER V9.57.0.0   UART                                                              06/09/2018 21:15:15 PAGE 4   
+ 131   2      //    if(temp == close_state){
+ 132   2      //      trys = 3;
+ 133   2      //      temp = open_state;
+ 134   2      //      do{
+ 135   2      //        ret = i2c_write(0x27, 0x19, &temp, 1);
+ 136   2      //      }while(ret && trys--);
+ 137   2      //      
+ 138   2      //      trys = 3;
+ 139   2      //      temp = 0xFF;
+ 140   2      //      do{
+ 141   2      //        ret = i2c_write(0x27, 0x14, &temp, 1);
+ 142   2      //      }while(ret && trys--);
+ 143   2      //    }
+ 144   2      //    else{
+ 145   2      //      trys = 3;
+ 146   2      //      temp = close_state;
+ 147   2      //      do{
+ 148   2      //        ret = i2c_write(0x27, 0x19, &temp, 1);
+ 149   2      //      }while(ret && trys--);
+ 150   2      //    }
+ 151   2        }
+ 152   1        else if(0 == strncmp(RX1_Buffer, CMD_Write, strlen(CMD_Write))){
+ 153   2          RX1_Write=0;
+ 154   2          B_RX1_OK=0;
+ 155   2        }
+ 156   1        else if(0 == strncmp(RX1_Buffer, CMD_Read, strlen(CMD_Read))){
+ 157   2          RX1_Write=0;
+ 158   2          B_RX1_OK=0;
+ 159   2        }
+ 160   1        else if(0 == strncmp(RX1_Buffer, CMD_Load, strlen(CMD_Load))){
+ 161   2          RX1_Write=0;
+ 162   2          B_RX1_OK=0;
+ 163   2          IAP_CONTR = 0x60;
+ 164   2        }
+ 165   1      }
+ 166          
+ 167          //========================================================================
+ 168          // function:    UART1_TxProcess
+ 169          // description: check data_ to send in infinite loop
+ 170          // parameter:   void
+ 171          // return:      void
+ 172          // version:     V1.0, 2018-1-11
+ 173          //========================================================================
+ 174          void UART1_TxProcess(void){
+ 175   1        if((TX1_Read != TX1_Write) && (!B_TX1_Busy)){ //have data_ && uart idle
+ 176   2          SBUF = TX1_Buffer[TX1_Read];
+C51 COMPILER V9.57.0.0   UART                                                              06/17/2018 19:42:40 PAGE 4   
 
- 177          // function:    PrintString1(uint8_t *str)
- 178          // description: write a string to buffer
- 179          // parameter:   string must be end of '\0'
- 180          // return:      void
- 181          // version:     V1.0, 2018-1-11
- 182          //========================================================================
- 183          void PrintString1(uint8_t* str){
- 184   1        for (; *str != 0; str++)
- 185   1          TX1_write2buff(*str); //end of '\0'
- 186   1      }
- 187          
- 188          //========================================================================
- 189          // function:    uart1 monitor
- 190          // description: check uart1 timeout
- 191          // parameter:   tick
- 192          // return:      void
- 193          // version:     V1.0, 2018-1-11
- 194          //========================================================================
- 195          void timeEv_UARTRx1Rst(uint8_t tick){
- 196   1        static uint16_t uartrst_tick = 0;
- 197   1        if(0 == RX1_Write){
- 198   2          uartrst_tick = 0;
- 199   2          return;
- 200   2        }
- 201   1        uartrst_tick += tick;
- 202   1        if(uartrst_tick > UART1_OVTIME){
- 203   2          uartrst_tick = 0;
- 204   2          RX1_Write = 0;
- 205   2        }
+ 177   2          B_TX1_Busy = 1;
+ 178   2          if(++TX1_Read >= TX1_LENGTH)
+ 179   2            TX1_Read = 0;
+ 180   2        }
+ 181   1      }
+ 182          
+ 183          //========================================================================
+ 184          // function:    TX1_write2buff(uint8_t dat)
+ 185          // description: write data_ in buffer to wait send
+ 186          // parameter:   byte data_
+ 187          // return:      void
+ 188          // version:     V1.0, 2018-1-11
+ 189          //========================================================================
+ 190          void TX1_write2buff(uint8_t dat){
+ 191   1        TX1_Buffer[TX1_Write] = dat;
+ 192   1        if(++TX1_Write >= TX1_LENGTH)
+ 193   1          TX1_Write = 0;
+ 194   1      }
+ 195          
+ 196          //========================================================================
+ 197          // function:    PrintString1(uint8_t *str)
+ 198          // description: write a string to buffer
+ 199          // parameter:   string must be end of '\0'
+ 200          // return:      void
+ 201          // version:     V1.0, 2018-1-11
+ 202          //========================================================================
+ 203          void PrintString1(uint8_t* str){
+ 204   1        for (; *str != 0; str++)
+ 205   1          TX1_write2buff(*str); //end of '\0'
  206   1      }
+ 207          
+ 208          //========================================================================
+ 209          // function:    uart1 monitor
+ 210          // description: check uart1 timeout
+ 211          // parameter:   tick
+ 212          // return:      void
+ 213          // version:     V1.0, 2018-1-11
+ 214          //========================================================================
+ 215          void timeEv_UARTRx1Rst(uint8_t tick){
+ 216   1        static uint16_t uartrst_tick = 0;
+ 217   1        if(0 == RX1_Write){
+ 218   2          uartrst_tick = 0;
+ 219   2          return;
+ 220   2        }
+ 221   1        uartrst_tick += tick;
+ 222   1        if(uartrst_tick > UART1_OVTIME){
+ 223   2          uartrst_tick = 0;
+ 224   2          RX1_Write = 0;
+ 225   2        }
+ 226   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE

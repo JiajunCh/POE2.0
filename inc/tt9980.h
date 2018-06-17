@@ -27,6 +27,7 @@
 #define I4_H				(0x3D)	//r  hight byte of current of port 4
 #define U4_L				(0x3E)	//r  low byte of voltage of port 4
 #define U4_H				(0x3F)	//r  hight byte of voltage of port 4
+#define GPDM(x)			(0x46+x*5)	//rw
 
 
 #endif

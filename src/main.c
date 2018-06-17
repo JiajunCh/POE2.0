@@ -14,9 +14,9 @@
 void delay(uint8_t time){
 	for(;time>0;time--);
 }
-void debug_delay(uint8_t time){
+void debug_delay(uint16_t time){
 	for(;time>0;time--)
-		delay(255);
+		delay(0xFF);
 }
 
 //========================================================================
@@ -38,7 +38,7 @@ void timeEvent_Process(uint8_t new_tick){
 #endif
 	timeEv_getGsta(cnt_tick);
 	timeEv_pwrled(cnt_tick);
-	timeEv_open_den(cnt_tick);
+//	timeEv_open_den(cnt_tick);
 	timeEv_getIU(cnt_tick);
 }
 
@@ -57,6 +57,7 @@ void main(void){
 #if (DEBUG)
 	UART1_config();
 #endif
+	system_init();
 	EA = 1;	//enable interuupt_
 	while(1){
 #if (DEBUG)

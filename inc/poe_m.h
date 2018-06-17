@@ -4,16 +4,16 @@
 #include "stc8xxxx.h"
 //************************************************************************
 #define DEBUG					(1)			//调试开关 1开，0关
-#define PWR_LED_MAX		(100)		//pwr led快闪周期(ms)：s电压大于100%
-#define PWR_LED_FAST	(250)		//pwr led快闪周期(ms)：s电压大于90%
-#define PWR_LED_SLOW	(750)		//pwr led慢闪周期(ms)：s电压大于80%
+#define PWR_LED_MAX		(50)		//pwr led快闪周期(ms)：s电压大于100%
+#define PWR_LED_FAST	(150)		//pwr led快闪周期(ms)：s电压大于95%
+#define PWR_LED_SLOW	(500)		//pwr led慢闪周期(ms)：s电压大于75%
 #define T_GET_G				(100) 	//收集单个设备G状态周期(ms)
 #define T_EN_D				(200) 	//系统开始逐个开启端口时间间隔
 #define SUM_ADC				(MAX_DEVICE * 1200) 	//D极ADC总和极限(ms)
 #define T_GET_IU			(500) 	//轮流采集每个设备的电流电压时间间隔
-#define IU_MAX				(24000) //最大负载功率100%  //全部端口电流公式 IU_MAX = 端口电流总和(ua)/122.07
-#define IU_MID				(IU_MAX * 95 / 100) //最大负载功率95%
-#define IU_NOR				(IU_MAX * 75 / 100) //最大负载功率75%
+#define IU_MAX				(8000ul) //最大负载功率100%  //全部端口电流公式 IU_MAX = 端口电流总和(ua)/122.07
+#define IU_MID				(IU_MAX * 70 / 100) //最大负载功率95%
+#define IU_NOR				(IU_MAX * 30 / 100) //最大负载功率75%
 //************************************************************************
 
 #define PRJ_NAME	"poe_led\n"

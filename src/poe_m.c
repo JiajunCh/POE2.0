@@ -15,6 +15,9 @@ static void g_disable(void);
 static void g_enable(void);
 static void set_den(uint8_t sta);
 
+void delay(uint8_t time);
+void debug_delay(uint16_t time);
+
 //========================================================================
 // function:		WDG_config
 // description:	start wdg
@@ -47,16 +50,41 @@ void WDG_freed(void){
 void system_init(void){
 	uint8_t xdata dev=0, ch=0, state = 0;
 	uint8_t xdata ret = 0, trys = 3;
+	
 	for(dev=0; dev<MAX_DEVICE; dev++)
 		for(ch=0; ch<MAX_CH; ch++)
-	set_l(dev, ch, L_OFF);					//led off : all 
+			set_l(dev, ch, L_ON);					//led on : all 
+	
+	PWR_LED = PWR_LED_ON;
+	debug_delay(0x4FFF);
+	for(dev=0; dev<MAX_DEVICE; dev++)
+		for(ch=0; ch<MAX_CH; ch++)
+			set_l(dev, ch, L_OFF);					//led off : all 
 	
 	PWR_LED = PWR_LED_OFF;
 	pwrled_time = PWR_LED_STOP;			//pwrled off
 	
-	set_den(0);											//set d disable
+	set_den(0xFF);
 	
-	state = 0xAA;
+	state = 0x01;
+	for(dev=0; dev<MAX_DEVICE; dev++){	//set 2th class
+		for(ch=0; ch<MAX_CH; ch++){
+			trys = 3;
+			do{
+				ret = i2c_write(i2c_salve[dev], GPDM(ch), &state, 1);
+			}while(ret && trys--);
+		}
+	}
+	
+	state = 0x00;
+	for(dev=0; dev<MAX_DEVICE; dev++){	//set pwr on
+		trys = 3;
+		do{
+			ret = i2c_write(i2c_salve[dev], PWR_ON, &state, 1);
+		}while(ret && trys--);
+	}
+	
+	state = 0xFF;
 	for(dev=0; dev<MAX_DEVICE; dev++){	//set work mode
 		trys = 3;
 		do{
@@ -111,15 +139,19 @@ void timeEv_pwrled(uint8_t tick){
 void timeEv_getGsta(uint8_t tick){
 	static uint16_t xdata getg_tick = 0;
 	static uint8_t xdata g_slave = 0;
-	uint8_t state = 0, ch = 0;
+	uint8_t state = 0, ch = 0, ret = 0;
 	getg_tick += tick;
 	if(getg_tick > T_GET_G){
 		getg_tick = 0;
-		if(0 != i2c_read(i2c_salve[g_slave], PWR_STATE, &state, 1))
+		ret = i2c_read(i2c_salve[g_slave], PWR_STATE, &state, 1);
+		if(ret)
 			state = G_OFF<<0 | G_OFF<<1 | G_OFF<<2 | G_OFF<<3; //if i2c_err, then led_off
-		if(G_ON != L_ON) state = ~state;
-		for(ch=0; ch<MAX_CH; ch++)
-			set_l(g_slave, ch, (bit)(state>>ch));
+		for(ch=0; ch<MAX_CH; ch++){
+			if(((state>>ch)&0x01) == G_ON)
+				set_l(g_slave, ch, L_ON);
+			else
+				set_l(g_slave, ch, L_OFF);
+		}
 		if(++g_slave >= MAX_DEVICE)
 			g_slave = 0;
 	}
@@ -134,6 +166,7 @@ void timeEv_getGsta(uint8_t tick){
 //========================================================================
 void timeEv_getIU(uint8_t tick){
 	static uint16_t xdata getiu_tick = 0;
+	uint8_t trys = 0, state = 0, ret = 0;
 	getiu_tick += tick;
 	if(getiu_tick > T_GET_IU){
 		uint8_t dev = 0, ch = 0;
@@ -145,29 +178,86 @@ void timeEv_getIU(uint8_t tick){
 			ret = i2c_read(i2c_salve[dev], I1_L, pbuf, U4_H-I1_L+1);
 			if(!ret){
 				for(ch=0; ch<MAX_CH; ch++)
-					sum_iu += (pbuf[ch<<2] | (pbuf[(ch<<2)+1]<<8));
+					sum_iu += ((uint16_t)pbuf[ch<<2] | ((uint16_t)pbuf[(ch<<2)+1]<<8));
 			}
 		}
 		if(sum_iu > IU_MAX){					// >100%
+//			set_den(0x00);									// d_off : all
 			g_disable();								// g_off + d_off : one
+			state = 0xAA;
+			for(dev=0; dev<MAX_DEVICE; dev++){	//set work mode
+				trys = 3;
+				do{
+					ret = i2c_write(i2c_salve[dev], WORK_MODE, &state, 1);
+				}while(ret && trys--);
+			}
 			den_start = ALL_CH;
 			pwrled_time = PWR_LED_MAX;
 		}
-		else if(sum_iu > IU_MID){			// >90%
-			set_den(0);									// d_off : all
+		else if(sum_iu > IU_MID){			// >95%
+			//beta
+			state = 0x00;
+			for(dev=0; dev<MAX_DEVICE; dev++){
+				trys = 3;
+				do{
+					ret = i2c_write(i2c_salve[dev], PWR_ON, &state, 1);
+				}while(ret && trys--);
+			}
+//			set_den(0x00);									// d_off : all
+			//beta
+			state = 0xAA;
+			for(dev=0; dev<MAX_DEVICE; dev++){	//set work mode
+				trys = 3;
+				do{
+					ret = i2c_write(i2c_salve[dev], WORK_MODE, &state, 1);
+				}while(ret && trys--);
+			}
 			den_start = ALL_CH;
 			pwrled_time = PWR_LED_FAST;
 		}
 		else if(sum_iu > IU_NOR){			// >75%
-			set_den(0);									// d_off : all
+			//beta
+			state = 0x0F;
+			for(dev=0; dev<MAX_DEVICE; dev++){
+				trys = 3;
+				do{
+					ret = i2c_write(i2c_salve[dev], PWR_ON, &state, 1);
+				}while(ret && trys--);
+			}
+//			set_den(0xFF);
+			//beta
+			state = 0xFF;
+			for(dev=0; dev<MAX_DEVICE; dev++){	//set work mode
+				trys = 3;
+				do{
+					ret = i2c_write(i2c_salve[dev], WORK_MODE, &state, 1);
+				}while(ret && trys--);
+			}
 			den_start = ALL_CH;
 			pwrled_time = PWR_LED_SLOW;
 		}
 		else{													// <=75%
-			if(den_start<ALL_CH) return;
-			g_enable();									// g_on + d_on : one
+			//beta
+			state = 0x0F;
+			for(dev=0; dev<MAX_DEVICE; dev++){
+				trys = 3;
+				do{
+					ret = i2c_write(i2c_salve[dev], PWR_ON, &state, 1);
+				}while(ret && trys--);
+			}
+//			set_den(0xFF);
+			//beta
+			state = 0xFF;
+			for(dev=0; dev<MAX_DEVICE; dev++){	//set work mode
+				trys = 3;
+				do{
+					ret = i2c_write(i2c_salve[dev], WORK_MODE, &state, 1);
+				}while(ret && trys--);
+			}
 			pwrled_time = PWR_LED_STOP;
 			PWR_LED = PWR_LED_OFF;
+			if(den_start<ALL_CH) return;
+//			g_enable();									// g_on + d_on : one
 		}
 	}
 }
@@ -190,19 +280,16 @@ static void g_disable(void){
 		if(ret) continue;
 		for(ch=MAX_CH-1; ch>=0; ch--){
 			if((g_state>>ch)&0x01 == G_ON){
-				close_state = (0x01<<ch)<<4;
+				//test
+				TX1_write2buff('d');
+				TX1_write2buff('1'+dev);
+				TX1_write2buff('1'+ch);
+				TX1_write2buff('\n');
+				//test
+				close_state |= (0x10<<ch);
 				trys = 3;
 				do{
 					ret = i2c_write(i2c_salve[dev], PWR_ON, &close_state, 1);
-				}while(ret && trys--);
-				trys = 3;
-				do{
-					ret = i2c_read(i2c_salve[dev], DET_EN, &d_state, 1);
-				}while(ret && trys--);
-				d_state &= ~(0x11<<ch);
-				trys = 3;
-				do{
-					ret = i2c_write(i2c_salve[dev], DET_EN, &d_state, 1);
 				}while(ret && trys--);
 				return;
 			}
@@ -219,24 +306,25 @@ static void g_disable(void){
 //========================================================================
 static void g_enable(void){
 	char xdata ret = 0, dev = 0, ch = 0;
-	uint8_t d_state = 0, g_state = 0;
+	uint8_t d_state = 0, g_state = 0, pwr_state = 0;
 	for(dev=0; dev<MAX_DEVICE; dev++){
 		uint8_t ret = 0, trys = 3;
 		do{
-			ret = i2c_read(i2c_salve[dev], DET_EN, &d_state, 1);
+			ret = i2c_read(i2c_salve[dev], PWR_STATE, &pwr_state, 1);
 		}while(ret && trys--);
 		if(ret) continue;
 		for(ch=0; ch<MAX_CH; ch++){
-			if(((d_state>>ch)&0x01) == 0){
-				g_state = (0x01<<ch)<<4;
+			if(((pwr_state>>ch)&0x01) == 0){
+				//test
+				TX1_write2buff('e');
+				TX1_write2buff('1'+dev);
+				TX1_write2buff('1'+ch);
+				TX1_write2buff('\n');
+				//test
+				g_state = 0x0F;
 				trys = 3;
 				do{
 					ret = i2c_write(i2c_salve[dev], PWR_ON, &g_state, 1);
-				}while(ret && trys--);
-				d_state |= (0x11<<ch);
-				trys = 3;
-				do{
-					ret = i2c_write(i2c_salve[dev], DET_EN, &d_state, 1);
 				}while(ret && trys--);
 				return;
 			}
@@ -253,10 +341,11 @@ static void g_enable(void){
 //========================================================================
 static void set_den(uint8_t sta){
 	uint8_t xdata dev = 0, ret = 0, trys = 3;
-	static uint8_t xdata den_flag = 0;		//d flag
-	if(den_flag == sta) return;
-	den_flag = sta;
+//	static uint8_t xdata den_flag[MAX_DEVICE] = {0};		//d flag
 	for(dev=0; dev<MAX_DEVICE; dev++){
+//		if(den_flag[dev] == sta) continue;
+//		den_flag[dev] = sta;
+		trys = 3;
 		do{
 			ret = i2c_write(i2c_salve[dev], DET_EN, &sta, 1);
 		}while(ret && trys--);
@@ -274,7 +363,7 @@ static void set_l(uint8_t dev, uint8_t ch, bit val){
 	uint8_t l = 0xff;
 	if(dev<MAX_DEVICE && ch<MAX_CH)
 		l = dev*MAX_CH+ch;
-	l+=7;
+	l += 8;
 	switch(l){
 		case 0:  L1 = val; break;
 		case 1:  L2 = val; break;
