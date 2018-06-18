@@ -27,7 +27,14 @@
 #define I4_H				(0x3D)	//r  hight byte of current of port 4
 #define U4_L				(0x3E)	//r  low byte of voltage of port 4
 #define U4_H				(0x3F)	//r  hight byte of voltage of port 4
+#define GPDM(x)			(0x46+x*5)	//rw
 
+#define MODE_AUTO		(0xFF)
+#define MODE_HFAUTO	(0xAA)
+
+
+unsigned char tt_write(unsigned char reg, unsigned char dat);
+unsigned char tt_read(unsigned char dev, unsigned char reg, unsigned char *dat);
 
 #endif
 

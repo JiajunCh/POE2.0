@@ -24,9 +24,9 @@ static uint8_t I2C_err = 0;
 //========================================================================
 void Wait(void){
 	uint8_t time = I2C_OVERTIME;
-	while (!(I2CMSST & 0x40) && time--);
+	while (!(I2CMSST & 0x40) && (--time));
 	I2CMSST &= ~0x40;
-	if(time) I2C_err |= ERR_OT;
+	if(time == 0) I2C_err |= ERR_OT;
 }
 
 //========================================================================
