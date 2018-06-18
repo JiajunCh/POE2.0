@@ -15,6 +15,9 @@ static void g_disable(void);
 static void g_enable(void);
 static void set_den(uint8_t sta);
 
+extern void delay(uint8_t time);
+extern void debug_delay(uint8_t time);
+
 //========================================================================
 // function:		WDG_config
 // description:	start wdg
@@ -47,13 +50,7 @@ void WDG_freed(void){
 void system_init(void){
 	uint8_t xdata dev=0, ch=0, state = 0;
 	uint8_t xdata ret = 0, trys = 3;
-	for(dev=0; dev<MAX_DEVICE; dev++)
-		for(ch=0; ch<MAX_CH; ch++)
-	set_l(dev, ch, L_OFF);					//led off : all 
-	
-	PWR_LED = PWR_LED_OFF;
-	pwrled_time = PWR_LED_STOP;			//pwrled off
-	
+
 	set_den(0);											//set d disable
 	
 	state = 0xAA;
@@ -63,6 +60,22 @@ void system_init(void){
 			ret = i2c_write(i2c_salve[dev], WORK_MODE, &state, 1);
 		}while(ret && trys--);
 	}
+	
+	for(dev=0; dev<MAX_DEVICE; dev++)
+		for(ch=0; ch<MAX_CH; ch++)
+			set_l(dev, ch, L_ON);					//led on : all 
+	
+	PWR_LED = PWR_LED_ON;			//pwrled on
+	
+	debug_delay(250);
+	debug_delay(250);
+	
+	for(dev=0; dev<MAX_DEVICE; dev++)
+		for(ch=0; ch<MAX_CH; ch++)
+			set_l(dev, ch, L_OFF);					//led off : all 
+	
+	PWR_LED = PWR_LED_OFF;
+	pwrled_time = PWR_LED_STOP;			//pwrled off
 }
 
 //========================================================================
@@ -119,7 +132,7 @@ void timeEv_getGsta(uint8_t tick){
 			state = G_OFF<<0 | G_OFF<<1 | G_OFF<<2 | G_OFF<<3; //if i2c_err, then led_off
 		if(G_ON != L_ON) state = ~state;
 		for(ch=0; ch<MAX_CH; ch++)
-			set_l(g_slave, ch, (bit)(state>>ch));
+			set_l(g_slave+2, ch, (bit)(state>>ch));
 		if(++g_slave >= MAX_DEVICE)
 			g_slave = 0;
 	}
@@ -272,9 +285,8 @@ static void set_den(uint8_t sta){
 //========================================================================
 static void set_l(uint8_t dev, uint8_t ch, bit val){
 	uint8_t l = 0xff;
-	if(dev<MAX_DEVICE && ch<MAX_CH)
+	if(dev<6 && ch<MAX_CH)
 		l = dev*MAX_CH+ch;
-	l+=7;
 	switch(l){
 		case 0:  L1 = val; break;
 		case 1:  L2 = val; break;

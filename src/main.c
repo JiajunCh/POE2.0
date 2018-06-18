@@ -57,6 +57,7 @@ void main(void){
 #if (DEBUG)
 	UART1_config();
 #endif
+	system_init();
 	EA = 1;	//enable interuupt_
 	while(1){
 #if (DEBUG)

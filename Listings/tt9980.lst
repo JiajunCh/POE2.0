@@ -1,10 +1,10 @@
-C51 COMPILER V9.57.0.0   TT9980                                                            06/09/2018 21:15:15 PAGE 1   
+C51 COMPILER V9.57.0.0   TT9980                                                            06/13/2018 13:54:50 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE TT9980
 OBJECT MODULE PLACED IN .\Objects\tt9980.obj
-COMPILER INVOKED BY: D:\Keil_v5_957\C51\BIN\C51.EXE src\tt9980.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\inc) DEBUG OBJECTEXTE
-                    -ND PRINT(.\Listings\tt9980.lst) TABS(2) OBJECT(.\Objects\tt9980.obj)
+COMPILER INVOKED BY: D:\keil4_c51\C51\BIN\C51.EXE src\tt9980.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\inc) DEBUG OBJECTEXTEND
+                    - PRINT(.\Listings\tt9980.lst) TABS(2) OBJECT(.\Objects\tt9980.obj)
 
 line level    source
 
