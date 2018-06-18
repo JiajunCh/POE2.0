@@ -6,15 +6,27 @@
 
 static uint16_t xdata pwrled_time = 0;	//led flash time
 
-uint8_t i2c_salve[MAX_DEVICE] = {TT9980_1_4, TT9980_5_8, TT9980_9_12, TT9980_13_16};
+const uint8_t i2c_salve[MAX_DEVICE] = {TT9980_1_4, TT9980_5_8, TT9980_9_12, TT9980_13_16};
 
+static void lowprio_off(void);
+static void highprio_on(void);
 static void set_led(uint8_t dev, uint8_t ch, bit val);
-static void g_disable(void);
-static void g_enable(void);
 static void set_allled(bit val);
 
-extern void delay(uint8_t time);
-extern void debug_delay(uint8_t time);
+//========================================================================
+// function:		any delay function
+// description:	delay time in while
+// parameter: 	tick
+// return: 			void
+// version: 		V2.0, 2018-6-18
+//========================================================================
+void delay(uint8_t time){
+	for(;time>0;time--);
+}
+void debug_delay(uint16_t time){
+	for(;time>0;time--)
+		delay(0xFF);
+}
 
 //========================================================================
 // function:		WDG_config
@@ -43,7 +55,7 @@ void WDG_freed(void){
 // description:	system init state
 // parameter: 	void
 // return: 			void
-// version: 		V1.0, 2018-5-28
+// version: 		V2.0, 2018-6-18
 //========================================================================
 void system_init(void){
 	uint8_t xdata ch=0;
@@ -55,9 +67,9 @@ void system_init(void){
 	PWR_LED = PWR_LED_OFF;	//pwrled off
 	pwrled_time = PWR_LED_STOP;			//pwrled off
 	
+	tt_write(WORK_MODE, MODE_HFAUTO);	//set work mode
 	tt_write(DET_EN, 0xFF);	//open det/class
-	tt_write(PWR_ON, 0x00);	//set pwr on
-	tt_write(WORK_MODE, MODE_AUTO);	//set work mode	
+	tt_write(PWR_ON, 0x0F);	//power on
 	for(ch=0; ch<MAX_CH; ch++)
 		tt_write(GPDM(ch), 0x01);	//set class level_2
 }
@@ -67,7 +79,7 @@ void system_init(void){
 // description:	pwr led flash
 // parameter: 	tick
 // return: 			void
-// version: 		V2.0, 2018-4-25
+// version: 		V2.0, 2018-6-18
 //========================================================================
 void timeEv_pwrled(uint8_t tick){
 	static uint16_t xdata pwrled_tick = 0;
@@ -85,7 +97,7 @@ void timeEv_pwrled(uint8_t tick){
 // description:	uart1 interrupt_ service handle
 // parameter: 	tick
 // return: 			void
-// version: 		V2.0, 2018-5-25
+// version: 		V2.0, 2018-6-18
 //========================================================================
 void timeEv_getGsta(uint8_t tick){
 	static uint16_t xdata getg_tick = 0;
@@ -94,7 +106,7 @@ void timeEv_getGsta(uint8_t tick){
 	getg_tick += tick;
 	if(getg_tick > T_GET_G){
 		getg_tick = 0;
-		ret = i2c_read(i2c_salve[g_slave], PWR_STATE, &state, 1);
+		ret = tt_read(g_slave, PWR_STATE, &state);
 		if(ret)
 			state = G_OFF ? 0x0F : 0x00;	//if i2c_err, then led_off
 		for(ch=0; ch<MAX_CH; ch++){
@@ -113,18 +125,17 @@ void timeEv_getGsta(uint8_t tick){
 // description:	get slave current and voltage
 // parameter: 	tick
 // return: 			void
-// version: 		V2.0, 2018-5-25
+// version: 		V2.0, 2018-6-18
 //========================================================================
 void timeEv_getIU(uint8_t tick){
 	static uint16_t xdata getiu_tick = 0;
-	uint8_t trys = 0, state = 0, ret = 0;
+	uint8_t xdata ret = 0;
 	getiu_tick += tick;
 	if(getiu_tick > T_GET_IU){
 		uint8_t dev = 0, ch = 0;
 		uint32_t sum_iu = 0;
 		getiu_tick = 0;
-		for(dev=0; dev<MAX_DEVICE; dev++){
-			uint8_t ret = 0;
+		for(dev=0; dev<MAX_DEVICE; dev++){			//calculate sum of i*u
 			uint8_t pbuf[U4_H-U1_L+1] = {0};
 			ret = i2c_read(i2c_salve[dev], I1_L, pbuf, U4_H-I1_L+1);
 			if(!ret){
@@ -132,63 +143,41 @@ void timeEv_getIU(uint8_t tick){
 					sum_iu += ((uint16_t)pbuf[ch<<2] | ((uint16_t)pbuf[(ch<<2)+1]<<8));
 			}
 		}
-		if(sum_iu > IU_MAX){					// >100%
-//			tt_write(DET_EN, 0x00);									// d_off : all
-			g_disable();								// g_off + d_off : one
-			tt_write(WORK_MODE, MODE_HFAUTO);	//set work mode	
+		if(sum_iu > IU_MAX){			// >100%
 			pwrled_time = PWR_LED_MAX;
+//			tt_write(WORK_MODE, MODE_HFAUTO);
+			lowprio_off();
 		}
-		else if(sum_iu > IU_MID){			// >95%
-			//beta
-			tt_write(PWR_ON, 0x00);	//set pwr on/off
-//			tt_write(DET_EN, 0x00);									// d_off : all
-			//beta
-			tt_write(WORK_MODE, MODE_HFAUTO);	//set work mode	
+		else if(sum_iu > IU_MID){	// >95%
 			pwrled_time = PWR_LED_FAST;
+//			tt_write(WORK_MODE, MODE_HFAUTO);
 		}
-		else if(sum_iu > IU_NOR){			// >75%
-			//beta
-			state = 0x0F;
-			for(dev=0; dev<MAX_DEVICE; dev++){
-				trys = 3;
-				do{
-					ret = i2c_write(i2c_salve[dev], PWR_ON, &state, 1);
-				}while(ret && trys--);
-			}
-//			tt_write(DET_EN, 0xFF);
-			//beta
-			tt_write(WORK_MODE, MODE_AUTO);	//set work mode	
+		else if(sum_iu > IU_NOR){	// >75%
 			pwrled_time = PWR_LED_SLOW;
+//			tt_write(WORK_MODE, MODE_AUTO);
+			tt_write(DET_EN, 0xFF);
+			highprio_on();
 		}
-		else{													// <=75%
-			//beta
-			state = 0x0F;
-			for(dev=0; dev<MAX_DEVICE; dev++){
-				trys = 3;
-				do{
-					ret = i2c_write(i2c_salve[dev], PWR_ON, &state, 1);
-				}while(ret && trys--);
-			}
-//			tt_write(DET_EN, 0xFF);
-			//beta
-			tt_write(WORK_MODE, MODE_AUTO);	//set work mode	
+		else{											// <=75%
 			pwrled_time = PWR_LED_STOP;
 			PWR_LED = PWR_LED_OFF;
-//			g_enable();									// g_on + d_on : one
+//			tt_write(WORK_MODE, MODE_AUTO);
+			tt_write(DET_EN, 0xFF);
+			highprio_on();
 		}
 	}
 }
 
 //========================================================================
-// function:		g_disable
+// function:		lowprio_off
 // description:	close gate witch is ON and lower previlige
 // parameter: 	void
 // return: 			closed flag
-// version: 		V1.0, 2018-5-28
+// version: 		V1.0, 2018-6-18
 //========================================================================
-static void g_disable(void){
-	char xdata ret = 0, dev = 0, ch = 0;
-	uint8_t g_state = 0, pwr_state = 0;
+static void lowprio_off(void){
+	uint8_t xdata ret = 0, dev = 0, ch = 0;
+	uint8_t xdata g_state = 0, pwr_state = 0;
 	for(dev=MAX_DEVICE-1; dev>=0; dev--){
 		ret = tt_read(dev, PWR_STATE, &pwr_state);	//read pwr state
 		if(ret) continue;
@@ -203,15 +192,15 @@ static void g_disable(void){
 }
 
 //========================================================================
-// function:		g_enable
+// function:		highprio_on
 // description:	open gate witch is OFF and higher previlige
 // parameter: 	void
 // return: 			closed flag
-// version: 		V1.0, 2018-5-28
+// version: 		V1.0, 2018-6-18
 //========================================================================
-static void g_enable(void){
-	char xdata ret = 0, dev = 0, ch = 0;
-	uint8_t g_state = 0, pwr_state = 0;
+static void highprio_on(void){
+	uint8_t xdata ret = 0, dev = 0, ch = 0;
+	uint8_t xdata g_state = 0, pwr_state = 0;
 	for(dev=0; dev<MAX_DEVICE; dev++){
 		ret = tt_read(dev, PWR_STATE, &pwr_state);	//read pwr state
 		if(ret) continue;

@@ -116,7 +116,7 @@ void uart1_handle (void) interrupt 4{
 // description: check cmd to process
 // parameter: 	void
 // return:	 		void
-// version: 		V2.0, 2018-4-24
+// version: 		V2.0, 2018-6-18
 //========================================================================
 void UART1_RxProcess(void){
 	if(!B_RX1_OK) return;
@@ -128,26 +128,6 @@ void UART1_RxProcess(void){
 		PrintString1(HW_VER);
 		PrintString1(__DATE__"\n");
 		PrintString1(__TIME__"\n");
-//		if(temp == close_state){
-//			trys = 3;
-//			temp = open_state;
-//			do{
-//				ret = i2c_write(0x27, 0x19, &temp, 1);
-//			}while(ret && trys--);
-//			
-//			trys = 3;
-//			temp = 0xFF;
-//			do{
-//				ret = i2c_write(0x27, 0x14, &temp, 1);
-//			}while(ret && trys--);
-//		}
-//		else{
-//			trys = 3;
-//			temp = close_state;
-//			do{
-//				ret = i2c_write(0x27, 0x19, &temp, 1);
-//			}while(ret && trys--);
-//		}
 	}
 	else if(0 == strncmp(RX1_Buffer, CMD_Write, strlen(CMD_Write))){
 		RX1_Write=0;

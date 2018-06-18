@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   TT9980                                                            06/18/2018 14:10:40 PAGE 1   
+C51 COMPILER V9.57.0.0   TT9980                                                            06/18/2018 16:09:32 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE TT9980
@@ -13,32 +13,47 @@ line level    source
    3          #include "poe_m.h"
    4          #include "STC8xxxx.H"
    5          
-   6          uint8_t tt_write(uint8_t reg, uint8_t dat){
-   7   1        uint8_t xdata dev = 0, state = dat, trys = 3, ret = 0;
-   8   1        for(dev=0; dev<MAX_DEVICE; dev++){  //set 2th class
-   9   2          trys = 3;
-  10   2          do{
-  11   3            ret = i2c_write(i2c_salve[dev], reg, &dat, 1);
-  12   3          }while(ret && trys--);
-  13   2        }
-  14   1        return ret;
-  15   1      }
-  16          
-  17          uint8_t tt_read(uint8_t dev, uint8_t reg, uint8_t *dat){
-  18   1        uint8_t xdata ret = 0, trys = 3;
-  19   1        do{
-  20   2          ret = i2c_read(i2c_salve[dev], reg, dat, 1);
-  21   2        }while(ret && trys--);
+   6          //========================================================================
+   7          // function:    tt_write
+   8          // description: tt9980 write a byte
+   9          // parameter:   reg, dat
+  10          // return:      result
+  11          // version:     V2.0, 2018-6-18
+  12          //========================================================================
+  13          uint8_t tt_write(uint8_t reg, uint8_t dat){
+  14   1        uint8_t xdata dev = 0, state = dat, trys = 3, ret = 0;
+  15   1        for(dev=0; dev<MAX_DEVICE; dev++){  //set 2th class
+  16   2          trys = 3;
+  17   2          ret <<= 1;
+  18   2          do{
+  19   3            ret |= i2c_write(i2c_salve[dev], reg, &state, 1);
+  20   3          }while((ret&0x01) && trys--);
+  21   2        }
   22   1        return ret;
   23   1      }
+  24          
+  25          //========================================================================
+  26          // function:    tt_read
+  27          // description: tt9980 read a byte
+  28          // parameter:   dev, reg, dat
+  29          // return:      result
+  30          // version:     V2.0, 2018-6-18
+  31          //========================================================================
+  32          uint8_t tt_read(uint8_t dev, uint8_t reg, uint8_t *dat){
+  33   1        uint8_t xdata ret = 0, trys = 3;
+  34   1        do{
+  35   2          ret = i2c_read(i2c_salve[dev], reg, dat, 1);
+  36   2        }while(ret && trys--);
+  37   1        return ret;
+  38   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    149    ----
+   CODE SIZE        =    161    ----
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =   ----       6
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =   ----       7
+   DATA SIZE        =   ----       6
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----
 END OF MODULE INFORMATION.

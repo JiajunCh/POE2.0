@@ -5,26 +5,11 @@
 #include "STC8xxxx.h"
 
 //========================================================================
-// function:		any delay function
-// description:	delay time in while
-// parameter: 	void
-// return: 			void
-// version: 		V1.0, 2018-1-11
-//========================================================================
-void delay(uint8_t time){
-	for(;time>0;time--);
-}
-void debug_delay(uint16_t time){
-	for(;time>0;time--)
-		delay(0xFF);
-}
-
-//========================================================================
 // function:		timeEvent_Process
 // description:	cyclicity_event and deferred_event proccess
 // parameter: 	a timerx tick
 // return: 			void
-// version: 		V2.0, 2018-4-24
+// version: 		V2.0, 2018-6-18
 //========================================================================
 void timeEvent_Process(uint8_t new_tick){
 	static uint8_t old_tick = 0;
@@ -46,7 +31,7 @@ void timeEvent_Process(uint8_t new_tick){
 // description:	main
 // parameter: 	void
 // return: 			void
-// version: 		V2.0, 2018-4-24
+// version: 		V2.0, 2018-6-18
 //========================================================================
 void main(void){
 	PORT_INIT();
