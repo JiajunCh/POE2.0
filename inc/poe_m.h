@@ -73,7 +73,7 @@ P3M0=0x00;	P3M1=0xC0;\
 P4M0=0x18;	P4M1=0x00;\
 P5M0=0x0C;	P5M1=0x00;
 
-extern const uint8_t i2c_salve[];
+extern uint8_t i2c_salve[];
 
 void delay(uint8_t time);
 void debug_delay(uint16_t time);

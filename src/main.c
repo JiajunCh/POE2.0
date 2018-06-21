@@ -36,11 +36,11 @@ void timeEvent_Process(uint8_t new_tick){
 void main(void){
 	PORT_INIT();
 	TIMER1_config();
-	WDG_config();
 	i2c_config();
 #if (DEBUG)
 	UART1_config();
 #endif
+	WDG_config();
 	system_init();
 	EA = 1;	//enable interuupt_
 	while(1){

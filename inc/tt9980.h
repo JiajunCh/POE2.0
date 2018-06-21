@@ -33,7 +33,8 @@
 #define MODE_HFAUTO	(0xAA)
 
 
-unsigned char tt_write(unsigned char reg, unsigned char dat);
+unsigned char ttall_write(unsigned char reg, unsigned char dat);
+unsigned char tt_write(unsigned char dev, unsigned char reg, unsigned char dat);
 unsigned char tt_read(unsigned char dev, unsigned char reg, unsigned char *dat);
 
 #endif

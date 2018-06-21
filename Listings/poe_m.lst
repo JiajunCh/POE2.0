@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   POE_M                                                             06/18/2018 16:09:32 PAGE 1   
+C51 COMPILER V9.57.0.0   POE_M                                                             06/21/2018 11:31:43 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE POE_M
@@ -16,7 +16,7 @@ line level    source
    6          
    7          static uint16_t xdata pwrled_time = 0;  //led flash time
    8          
-   9          const uint8_t i2c_salve[MAX_DEVICE] = {TT9980_1_4, TT9980_5_8, TT9980_9_12, TT9980_13_16};
+   9          uint8_t i2c_salve[MAX_DEVICE] = {TT9980_1_4, TT9980_5_8, TT9980_9_12, TT9980_13_16};
   10          
   11          static void lowprio_off(void);
   12          static void highprio_on(void);
@@ -62,7 +62,7 @@ line level    source
   52          
   53          //========================================================================
   54          // function:    system_init
-C51 COMPILER V9.57.0.0   POE_M                                                             06/18/2018 16:09:32 PAGE 2   
+C51 COMPILER V9.57.0.0   POE_M                                                             06/21/2018 11:31:43 PAGE 2   
 
   55          // description: system init state
   56          // parameter:   void
@@ -79,222 +79,236 @@ line level    source
   67   1        PWR_LED = PWR_LED_OFF;  //pwrled off
   68   1        pwrled_time = PWR_LED_STOP;     //pwrled off
   69   1        
-  70   1        tt_write(WORK_MODE, MODE_HFAUTO); //set work mode
-  71   1        tt_write(DET_EN, 0xFF); //open det/class
-  72   1        tt_write(PWR_ON, 0x0F); //power on
+  70   1        ttall_write(WORK_MODE, MODE_HFAUTO);  //set work mode
+  71   1        ttall_write(DET_EN, 0xFF);  //open det/class
+  72   1        ttall_write(PWR_ON, 0x0F);  //power on
   73   1        for(ch=0; ch<MAX_CH; ch++)
-  74   1          tt_write(GPDM(ch), 0x01); //set class level_2
-  75   1      }
-  76          
-  77          //========================================================================
-  78          // function:    timeEv_pwrled
-  79          // description: pwr led flash
-  80          // parameter:   tick
-  81          // return:      void
-  82          // version:     V2.0, 2018-6-18
-  83          //========================================================================
-  84          void timeEv_pwrled(uint8_t tick){
-  85   1        static uint16_t xdata pwrled_tick = 0;
-  86   1        pwrled_tick += tick;
-  87   1        if(PWR_LED_STOP == pwrled_time)
-  88   1          return;
-  89   1        if(pwrled_tick > pwrled_time){
-  90   2          pwrled_tick = 0;
-  91   2          PWR_LED = !PWR_LED;
-  92   2        }
-  93   1      }
-  94          
-  95          //========================================================================
-  96          // function:    timeEv_getGsta
-  97          // description: uart1 interrupt_ service handle
-  98          // parameter:   tick
-  99          // return:      void
- 100          // version:     V2.0, 2018-6-18
- 101          //========================================================================
- 102          void timeEv_getGsta(uint8_t tick){
- 103   1        static uint16_t xdata getg_tick = 0;
- 104   1        static uint8_t xdata g_slave = 0;
- 105   1        uint8_t state = 0, ch = 0, ret = 0;
- 106   1        getg_tick += tick;
- 107   1        if(getg_tick > T_GET_G){
- 108   2          getg_tick = 0;
- 109   2          ret = tt_read(g_slave, PWR_STATE, &state);
- 110   2          if(ret)
- 111   2            state = G_OFF ? 0x0F : 0x00;  //if i2c_err, then led_off
- 112   2          for(ch=0; ch<MAX_CH; ch++){
- 113   3            if(((state>>ch)&0x01) == G_ON)
- 114   3              set_led(g_slave, ch, L_ON);
- 115   3            else
- 116   3              set_led(g_slave, ch, L_OFF);
-C51 COMPILER V9.57.0.0   POE_M                                                             06/18/2018 16:09:32 PAGE 3   
+  74   1          ttall_write(GPDM(ch), 0x01);  //set class level_2
+  75   1        
+  76   1        PrintString1(PRJ_NAME); //test
+  77   1      }
+  78          
+  79          //========================================================================
+  80          // function:    timeEv_pwrled
+  81          // description: pwr led flash
+  82          // parameter:   tick
+  83          // return:      void
+  84          // version:     V2.0, 2018-6-18
+  85          //========================================================================
+  86          void timeEv_pwrled(uint8_t tick){
+  87   1        static uint16_t xdata pwrled_tick = 0;
+  88   1        if(PWR_LED_STOP == pwrled_time)
+  89   1          return;
+  90   1        pwrled_tick += tick;
+  91   1        if(pwrled_tick > pwrled_time){
+  92   2          pwrled_tick = 0;
+  93   2          PWR_LED = !PWR_LED;
+  94   2        }
+  95   1      }
+  96          
+  97          //========================================================================
+  98          // function:    timeEv_getGsta
+  99          // description: uart1 interrupt_ service handle
+ 100          // parameter:   tick
+ 101          // return:      void
+ 102          // version:     V2.0, 2018-6-18
+ 103          //========================================================================
+ 104          void timeEv_getGsta(uint8_t tick){
+ 105   1        static uint16_t xdata getg_tick = 0;
+ 106   1        static uint8_t dev = 0;
+ 107   1        uint8_t state = 0, ch = 0, ret = 0;
+ 108   1        getg_tick += tick;
+ 109   1        if(getg_tick > T_GET_G){
+ 110   2          getg_tick = 0;
+ 111   2          TX1_write2buff('g');  //test
+ 112   2          ret = tt_read(dev, PWR_STATE, &state);
+ 113   2          if(ret){
+ 114   3            TX1_write2buff('-');  //test
+ 115   3            state = (G_OFF ? 0xFF : 0x00);  //if i2c_err, then led_off
+ 116   3          }
+C51 COMPILER V9.57.0.0   POE_M                                                             06/21/2018 11:31:43 PAGE 3   
 
- 117   3          }
- 118   2          if(++g_slave >= MAX_DEVICE)
- 119   2            g_slave = 0;
- 120   2        }
- 121   1      }
- 122          
- 123          //========================================================================
- 124          // function:    timeEv_getIU
- 125          // description: get slave current and voltage
- 126          // parameter:   tick
- 127          // return:      void
- 128          // version:     V2.0, 2018-6-18
- 129          //========================================================================
- 130          void timeEv_getIU(uint8_t tick){
- 131   1        static uint16_t xdata getiu_tick = 0;
- 132   1        uint8_t xdata ret = 0;
- 133   1        getiu_tick += tick;
- 134   1        if(getiu_tick > T_GET_IU){
- 135   2          uint8_t dev = 0, ch = 0;
- 136   2          uint32_t sum_iu = 0;
- 137   2          getiu_tick = 0;
- 138   2          for(dev=0; dev<MAX_DEVICE; dev++){      //calculate sum of i*u
- 139   3            uint8_t pbuf[U4_H-U1_L+1] = {0};
- 140   3            ret = i2c_read(i2c_salve[dev], I1_L, pbuf, U4_H-I1_L+1);
- 141   3            if(!ret){
- 142   4              for(ch=0; ch<MAX_CH; ch++)
- 143   4                sum_iu += ((uint16_t)pbuf[ch<<2] | ((uint16_t)pbuf[(ch<<2)+1]<<8));
- 144   4            }
- 145   3          }
- 146   2          if(sum_iu > IU_MAX){      // >100%
- 147   3            pwrled_time = PWR_LED_MAX;
- 148   3      //      tt_write(WORK_MODE, MODE_HFAUTO);
- 149   3            lowprio_off();
- 150   3          }
- 151   2          else if(sum_iu > IU_MID){ // >95%
- 152   3            pwrled_time = PWR_LED_FAST;
- 153   3      //      tt_write(WORK_MODE, MODE_HFAUTO);
- 154   3          }
- 155   2          else if(sum_iu > IU_NOR){ // >75%
- 156   3            pwrled_time = PWR_LED_SLOW;
- 157   3      //      tt_write(WORK_MODE, MODE_AUTO);
- 158   3            tt_write(DET_EN, 0xFF);
- 159   3            highprio_on();
- 160   3          }
- 161   2          else{                     // <=75%
- 162   3            pwrled_time = PWR_LED_STOP;
- 163   3            PWR_LED = PWR_LED_OFF;
- 164   3      //      tt_write(WORK_MODE, MODE_AUTO);
- 165   3            tt_write(DET_EN, 0xFF);
- 166   3            highprio_on();
+ 117   2          else{
+ 118   3            TX1_write2buff('|');  //test
+ 119   3          }
+ 120   2          for(ch=0; ch<MAX_CH; ch++){
+ 121   3            if(((state>>ch)&0x01) == G_ON)
+ 122   3              set_led(dev, ch, L_ON);
+ 123   3            else
+ 124   3              set_led(dev, ch, L_OFF);
+ 125   3          }
+ 126   2          if((++dev) >= MAX_DEVICE)
+ 127   2            dev = 0;
+ 128   2          TX1_write2buff('\n'); //test
+ 129   2        }
+ 130   1      }
+ 131          
+ 132          //========================================================================
+ 133          // function:    timeEv_getIU
+ 134          // description: get slave current and voltage
+ 135          // parameter:   tick
+ 136          // return:      void
+ 137          // version:     V2.0, 2018-6-18
+ 138          //========================================================================
+ 139          void timeEv_getIU(uint8_t tick){
+ 140   1        static uint16_t xdata getiu_tick = 0;
+ 141   1        uint8_t xdata ret = 0;
+ 142   1        getiu_tick += tick;
+ 143   1        if(getiu_tick > T_GET_IU){
+ 144   2          uint8_t dev = 0, ch = 0;
+ 145   2          uint32_t sum_iu = 0;
+ 146   2          getiu_tick = 0;
+ 147   2          TX1_write2buff('i');//test
+ 148   2          for(dev=0; dev<MAX_DEVICE; dev++){      //calculate sum of i*u
+ 149   3            uint8_t pbuf[U4_H-U1_L+1] = {0};
+ 150   3            ret = i2c_read(i2c_salve[dev], I1_L, pbuf, U4_H-I1_L+1);
+ 151   3            if(!ret){
+ 152   4              TX1_write2buff('|');//test
+ 153   4              for(ch=0; ch<MAX_CH; ch++)
+ 154   4                sum_iu += ((uint16_t)pbuf[ch<<2] | ((uint16_t)pbuf[(ch<<2)+1]<<8));
+ 155   4            }
+ 156   3            else
+ 157   3              TX1_write2buff('-');//test
+ 158   3          }
+ 159   2          if(sum_iu > IU_MAX){      // >100%
+ 160   3            pwrled_time = PWR_LED_MAX;
+ 161   3            lowprio_off();
+ 162   3            TX1_write2buff('M');//test
+ 163   3          }
+ 164   2          else if(sum_iu > IU_MID){ // >95%
+ 165   3            pwrled_time = PWR_LED_FAST;
+ 166   3            TX1_write2buff('m');//test
  167   3          }
- 168   2        }
- 169   1      }
- 170          
- 171          //========================================================================
- 172          // function:    lowprio_off
- 173          // description: close gate witch is ON and lower previlige
- 174          // parameter:   void
- 175          // return:      closed flag
- 176          // version:     V1.0, 2018-6-18
- 177          //========================================================================
- 178          static void lowprio_off(void){
-C51 COMPILER V9.57.0.0   POE_M                                                             06/18/2018 16:09:32 PAGE 4   
+ 168   2          else if(sum_iu > IU_NOR){ // >75%
+ 169   3            pwrled_time = PWR_LED_SLOW;
+ 170   3            ttall_write(DET_EN, 0xFF);
+ 171   3            highprio_on();
+ 172   3            TX1_write2buff('S');//test
+ 173   3          }
+ 174   2          else{                     // <=75%
+ 175   3            pwrled_time = PWR_LED_STOP;
+ 176   3            PWR_LED = PWR_LED_OFF;
+ 177   3            ttall_write(DET_EN, 0xFF);
+ 178   3            highprio_on();
+C51 COMPILER V9.57.0.0   POE_M                                                             06/21/2018 11:31:43 PAGE 4   
 
- 179   1        uint8_t xdata ret = 0, dev = 0, ch = 0;
- 180   1        uint8_t xdata g_state = 0, pwr_state = 0;
- 181   1        for(dev=MAX_DEVICE-1; dev>=0; dev--){
- 182   2          ret = tt_read(dev, PWR_STATE, &pwr_state);  //read pwr state
- 183   2          if(ret) continue;
- 184   2          for(ch=MAX_CH-1; ch>=0; ch--){
- 185   3            if((pwr_state>>ch)&0x01 == G_ON){   //get pwr_on channal
- 186   4              g_state |= (0x10<<ch);
- 187   4              tt_write(PWR_ON, g_state);  //set pwr on/off
- 188   4              return;
- 189   4            }
- 190   3          }
- 191   2        }
- 192   1      }
- 193          
- 194          //========================================================================
- 195          // function:    highprio_on
- 196          // description: open gate witch is OFF and higher previlige
- 197          // parameter:   void
- 198          // return:      closed flag
- 199          // version:     V1.0, 2018-6-18
- 200          //========================================================================
- 201          static void highprio_on(void){
- 202   1        uint8_t xdata ret = 0, dev = 0, ch = 0;
- 203   1        uint8_t xdata g_state = 0, pwr_state = 0;
- 204   1        for(dev=0; dev<MAX_DEVICE; dev++){
- 205   2          ret = tt_read(dev, PWR_STATE, &pwr_state);  //read pwr state
- 206   2          if(ret) continue;
- 207   2          for(ch=0; ch<MAX_CH; ch++){
- 208   3            if(((pwr_state>>ch)&0x01) == 0){
- 209   4              g_state |= (0x01<<ch);
- 210   4              tt_write(PWR_ON, g_state);  //set pwr on/off
- 211   4              return;
- 212   4            }
- 213   3          }
- 214   2        }
- 215   1      }
- 216          
- 217          //========================================================================
- 218          // function:    set_led
- 219          // description: set led on/off
- 220          // parameter:   device, channel, state
- 221          // return:      void
- 222          // version:     V2.0, 2018-6-18
- 223          //========================================================================
- 224          static void set_led(uint8_t dev, uint8_t ch, bit val){
- 225   1        uint8_t l = 0xff;
- 226   1        if(dev<6 && ch<MAX_CH)
- 227   1          l = dev*MAX_CH+ch;
- 228   1        l += 8;
- 229   1        switch(l){
- 230   2          case 0:  L1 = val; break;
- 231   2          case 1:  L2 = val; break;
- 232   2          case 2:  L3 = val; break;
- 233   2          case 3:  L4 = val; break;
- 234   2          case 4:  L5 = val; break;
- 235   2          case 5:  L6 = val; break;
- 236   2          case 6:  L7 = val; break;
- 237   2          case 7:  L8 = val; break;
- 238   2          case 8:  L9 = val; break;
- 239   2          case 9:  L10 = val; break;
- 240   2          case 10: L11 = val; break;
-C51 COMPILER V9.57.0.0   POE_M                                                             06/18/2018 16:09:32 PAGE 5   
+ 179   3            TX1_write2buff('s');//test
+ 180   3          }
+ 181   2          TX1_write2buff('\n');//test
+ 182   2        }
+ 183   1      }
+ 184          
+ 185          //========================================================================
+ 186          // function:    lowprio_off
+ 187          // description: close gate witch is ON and lower previlige
+ 188          // parameter:   void
+ 189          // return:      closed flag
+ 190          // version:     V1.0, 2018-6-18
+ 191          //========================================================================
+ 192          static void lowprio_off(void){
+ 193   1        uint8_t xdata ret = 0, dev = 0, ch = 0;
+ 194   1        uint8_t pwr_state = 0, g_state = 0;
+ 195   1        for(dev=MAX_DEVICE-1; dev>=0; dev--){
+ 196   2          ret = tt_read(dev, PWR_STATE, &pwr_state);  //read pwr state
+ 197   2          if(ret) continue;
+ 198   2          for(ch=MAX_CH-1; ch>=0; ch--){
+ 199   3            if((pwr_state>>ch)&0x01 == G_ON){   //get pwr_on channal
+ 200   4              g_state |= (0x10<<ch);
+ 201   4              tt_write(dev, PWR_ON, g_state); //set pwr on/off
+ 202   4              return;
+ 203   4            }
+ 204   3          }
+ 205   2        }
+ 206   1      }
+ 207          
+ 208          //========================================================================
+ 209          // function:    highprio_on
+ 210          // description: open gate witch is OFF and higher previlige
+ 211          // parameter:   void
+ 212          // return:      closed flag
+ 213          // version:     V1.0, 2018-6-18
+ 214          //========================================================================
+ 215          static void highprio_on(void){
+ 216   1        uint8_t xdata ret = 0, dev = 0, ch = 0;
+ 217   1        uint8_t pwr_state = 0, g_state = 0;
+ 218   1        for(dev=0; dev<MAX_DEVICE; dev++){
+ 219   2          ret = tt_read(dev, PWR_STATE, &pwr_state);  //read pwr state
+ 220   2          if(ret) continue;
+ 221   2          for(ch=0; ch<MAX_CH; ch++){
+ 222   3            if(((pwr_state>>ch)&0x01) == G_OFF){
+ 223   4              g_state |= (0x01<<ch);
+ 224   4              tt_write(dev, PWR_ON, g_state); //set pwr on/off
+ 225   4              return;
+ 226   4            }
+ 227   3          }
+ 228   2        }
+ 229   1      }
+ 230          
+ 231          //========================================================================
+ 232          // function:    set_led
+ 233          // description: set led on/off
+ 234          // parameter:   device, channel, state
+ 235          // return:      void
+ 236          // version:     V2.0, 2018-6-18
+ 237          //========================================================================
+ 238          static void set_led(uint8_t dev, uint8_t ch, bit val){
+ 239   1        uint8_t l = 0xff;
+ 240   1        if(dev<6 && ch<MAX_CH)
+C51 COMPILER V9.57.0.0   POE_M                                                             06/21/2018 11:31:43 PAGE 5   
 
- 241   2          case 11: L12 = val; break;
- 242   2          case 12: L13 = val; break;
- 243   2          case 13: L14 = val; break;
- 244   2          case 14: L15 = val; break;
- 245   2          case 15: L16 = val; break;
- 246   2          case 16: L17 = val; break;
- 247   2          case 17: L18 = val; break;
- 248   2          case 18: L19 = val; break;
- 249   2          case 19: L20 = val; break;
- 250   2          case 20: L21 = val; break;
- 251   2          case 21: L22 = val; break;
- 252   2          case 22: L23 = val; break;
- 253   2          case 23: L24 = val; break;
- 254   2          default:break;
- 255   2        }
- 256   1      }
- 257          
- 258          //========================================================================
- 259          // function:    set_lalled
- 260          // description: set led on/off
- 261          // parameter:   state
- 262          // return:      void
- 263          // version:     V2.0, 2018-6-18
- 264          //========================================================================
- 265          static void set_allled(bit val){
- 266   1        uint8_t dev, ch;
- 267   1        for(dev=0; dev<MAX_DEVICE; dev++)
- 268   1          for(ch=0; ch<MAX_CH; ch++)
- 269   1            set_led(dev, ch, val);          //set led all 
+ 241   1          l = dev*MAX_CH+ch;
+ 242   1        l += 8;
+ 243   1        switch(l){
+ 244   2          case 0:  L1 = val; break;
+ 245   2          case 1:  L2 = val; break;
+ 246   2          case 2:  L3 = val; break;
+ 247   2          case 3:  L4 = val; break;
+ 248   2          case 4:  L5 = val; break;
+ 249   2          case 5:  L6 = val; break;
+ 250   2          case 6:  L7 = val; break;
+ 251   2          case 7:  L8 = val; break;
+ 252   2          case 8:  L9 = val; break;
+ 253   2          case 9:  L10 = val; break;
+ 254   2          case 10: L11 = val; break;
+ 255   2          case 11: L12 = val; break;
+ 256   2          case 12: L13 = val; break;
+ 257   2          case 13: L14 = val; break;
+ 258   2          case 14: L15 = val; break;
+ 259   2          case 15: L16 = val; break;
+ 260   2          case 16: L17 = val; break;
+ 261   2          case 17: L18 = val; break;
+ 262   2          case 18: L19 = val; break;
+ 263   2          case 19: L20 = val; break;
+ 264   2          case 20: L21 = val; break;
+ 265   2          case 21: L22 = val; break;
+ 266   2          case 22: L23 = val; break;
+ 267   2          case 23: L24 = val; break;
+ 268   2          default:break;
+ 269   2        }
  270   1      }
  271          
+ 272          //========================================================================
+ 273          // function:    set_lalled
+ 274          // description: set led on/off
+ 275          // parameter:   state
+ 276          // return:      void
+ 277          // version:     V2.0, 2018-6-18
+ 278          //========================================================================
+ 279          static void set_allled(bit val){
+ 280   1        uint8_t dev, ch;
+ 281   1        for(dev=0; dev<MAX_DEVICE; dev++)
+ 282   1          for(ch=0; ch<MAX_CH; ch++)
+ 283   1            set_led(dev, ch, val);          //set led all 
+ 284   1      }
+ 285          
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   1092    ----
-   CONSTANT SIZE    =     14    ----
-   XDATA SIZE       =      9      12
+   CODE SIZE        =   1149    ----
+   CONSTANT SIZE    =     23    ----
+   XDATA SIZE       =      8       8
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =      4      22
+   DATA SIZE        =      5      26
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----       2
 END OF MODULE INFORMATION.

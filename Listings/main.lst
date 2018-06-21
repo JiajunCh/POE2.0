@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   MAIN                                                              06/18/2018 16:09:32 PAGE 1   
+C51 COMPILER V9.57.0.0   MAIN                                                              06/21/2018 11:31:43 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE MAIN
@@ -46,11 +46,11 @@ line level    source
   36          void main(void){
   37   1        PORT_INIT();
   38   1        TIMER1_config();
-  39   1        WDG_config();
-  40   1        i2c_config();
-  41   1      #if (DEBUG)
-  42   1        UART1_config();
-  43   1      #endif
+  39   1        i2c_config();
+  40   1      #if (DEBUG)
+  41   1        UART1_config();
+  42   1      #endif
+  43   1        WDG_config();
   44   1        system_init();
   45   1        EA = 1; //enable interuupt_
   46   1        while(1){
@@ -62,7 +62,7 @@ line level    source
   52   2          WDG_freed();
   53   2        }
   54   1      }
-C51 COMPILER V9.57.0.0   MAIN                                                              06/18/2018 16:09:32 PAGE 2   
+C51 COMPILER V9.57.0.0   MAIN                                                              06/21/2018 11:31:43 PAGE 2   
 
   55          
 
