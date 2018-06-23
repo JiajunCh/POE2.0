@@ -62,7 +62,7 @@ void system_init(void){
 	
 	set_allled(L_ON);	//led on : all 
 	PWR_LED = PWR_LED_ON;	//pwrled on
-	debug_delay(0x4FFF);
+	debug_delay(0x2FFF);
 	set_allled(L_OFF);	//led off : all 
 	PWR_LED = PWR_LED_OFF;	//pwrled off
 	pwrled_time = PWR_LED_STOP;			//pwrled off
@@ -108,15 +108,15 @@ void timeEv_getGsta(uint8_t tick){
 	getg_tick += tick;
 	if(getg_tick > T_GET_G){
 		getg_tick = 0;
-		TX1_write2buff('g');	//test
+//		TX1_write2buff('g');	//test
 		ret = tt_read(dev, PWR_STATE, &state);
 		if(ret){
-			TX1_write2buff('-');	//test
+//			TX1_write2buff('-');	//test
 			state = (G_OFF ? 0xFF : 0x00);	//if i2c_err, then led_off
 		}
-		else{
-			TX1_write2buff('|');	//test
-		}
+//		else
+//			TX1_write2buff('|');	//test
+//		TX1_write2buff('0'+(state&0x0F));	//test
 		for(ch=0; ch<MAX_CH; ch++){
 			if(((state>>ch)&0x01) == G_ON)
 				set_led(dev, ch, L_ON);
@@ -125,7 +125,7 @@ void timeEv_getGsta(uint8_t tick){
 		}
 		if((++dev) >= MAX_DEVICE)
 			dev = 0;
-		TX1_write2buff('\n');	//test
+//		TX1_write2buff('\n');	//test
 	}
 }
 
@@ -144,41 +144,56 @@ void timeEv_getIU(uint8_t tick){
 		uint8_t dev = 0, ch = 0;
 		uint32_t sum_iu = 0;
 		getiu_tick = 0;
-		TX1_write2buff('i');//test
+//		TX1_write2buff('i');//test
 		for(dev=0; dev<MAX_DEVICE; dev++){			//calculate sum of i*u
 			uint8_t pbuf[U4_H-U1_L+1] = {0};
 			ret = i2c_read(i2c_salve[dev], I1_L, pbuf, U4_H-I1_L+1);
 			if(!ret){
-				TX1_write2buff('|');//test
-				for(ch=0; ch<MAX_CH; ch++)
-					sum_iu += ((uint16_t)pbuf[ch<<2] | ((uint16_t)pbuf[(ch<<2)+1]<<8));
+//				TX1_write2buff('|');//test
+				for(ch=0; ch<MAX_CH; ch++){
+					sum_iu += (uint16_t)pbuf[ch<<2] | ((uint16_t)pbuf[(ch<<2)+1]<<8);
+				}
 			}
-			else
-				TX1_write2buff('-');//test
+//			else	//test
+//				TX1_write2buff('-');//test
 		}
+#if (DEBUG)
+	{
+		uint32_t test_sum = sum_iu;
+		TX1_write2buff('i');
+		TX1_write2buff('=');
+		while(test_sum){
+			TX1_write2buff('0'+(test_sum%10));//test
+			test_sum /= 10;
+		}
+	}
+#endif
+		
 		if(sum_iu > IU_MAX){			// >100%
 			pwrled_time = PWR_LED_MAX;
 			lowprio_off();
-			TX1_write2buff('M');//test
+//			TX1_write2buff('M');//test
 		}
 		else if(sum_iu > IU_MID){	// >95%
 			pwrled_time = PWR_LED_FAST;
-			TX1_write2buff('m');//test
+//			TX1_write2buff('m');//test
 		}
 		else if(sum_iu > IU_NOR){	// >75%
 			pwrled_time = PWR_LED_SLOW;
 			ttall_write(DET_EN, 0xFF);
-			highprio_on();
-			TX1_write2buff('S');//test
+//			highprio_on();
+			ttall_write(PWR_ON, 0x0F);
+//			TX1_write2buff('S');//test
 		}
 		else{											// <=75%
 			pwrled_time = PWR_LED_STOP;
 			PWR_LED = PWR_LED_OFF;
 			ttall_write(DET_EN, 0xFF);
-			highprio_on();
-			TX1_write2buff('s');//test
+//			highprio_on();
+			ttall_write(PWR_ON, 0x0F);
+//			TX1_write2buff('s');//test
 		}
-		TX1_write2buff('\n');//test
+//		TX1_write2buff('\n');//test
 	}
 }
 
@@ -190,7 +205,7 @@ void timeEv_getIU(uint8_t tick){
 // version: 		V1.0, 2018-6-18
 //========================================================================
 static void lowprio_off(void){
-	uint8_t xdata ret = 0, dev = 0, ch = 0;
+	char xdata ret = 0, dev = 0, ch = 0;
 	uint8_t pwr_state = 0, g_state = 0;
 	for(dev=MAX_DEVICE-1; dev>=0; dev--){
 		ret = tt_read(dev, PWR_STATE, &pwr_state);	//read pwr state
@@ -217,7 +232,8 @@ static void highprio_on(void){
 	uint8_t pwr_state = 0, g_state = 0;
 	for(dev=0; dev<MAX_DEVICE; dev++){
 		ret = tt_read(dev, PWR_STATE, &pwr_state);	//read pwr state
-		if(ret) continue;
+		if(ret)
+			continue;
 		for(ch=0; ch<MAX_CH; ch++){
 			if(((pwr_state>>ch)&0x01) == G_OFF){
 				g_state |= (0x01<<ch);

@@ -44,9 +44,8 @@ uint8_t tt_write(uint8_t dev, uint8_t reg, uint8_t dat){
 //========================================================================
 uint8_t tt_read(uint8_t dev, uint8_t reg, uint8_t *dat){
 	uint8_t xdata ret = 0, trys = 3;
-	uint8_t state = *dat;
 	do{
-		ret = i2c_read(i2c_salve[dev], reg, &state, 1);
+		ret = i2c_read(i2c_salve[dev], reg, dat, 1);
 	}while(ret && trys--);
 	return ret;
 }
