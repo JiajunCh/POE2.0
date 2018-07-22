@@ -10,6 +10,9 @@
 #define T_GET_G				(100) 	//收集单个设备G状态周期(ms)
 #define T_GET_IU			(500) 	//轮流采集每个设备的电流电压时间间隔(ms)
 
+#define IU_UP					(200000ul)	//采集电流总和有效值上限，高于此值忽略本次采集
+#define CNT_IUMAX			(2)				//连续采集到n次大于IU_MAX才关闭一个端口
+#define CNT_ERR				(10)			//连续采集错误n次单片机将会重启，此值大于等于256此功能失效
 #define IU_MAX				(8000ul) //最大负载功率100%  //全部端口电流公式 IU_MAX = 端口电流总和(uA)/122.07
 															//例如 IU_MAX = 3A(3 000 000 uA) / 122.07 = 24576
 #define IU_MID				(IU_MAX * 60 / 100) //最大负载功率95%
@@ -17,7 +20,7 @@
 //************************************************************************
 
 #define PRJ_NAME	"poe_led\n"
-#define SW_VER		"Sw_Ver:V2.0\n"
+#define SW_VER		"Sw_Ver:V2.1\n"
 #define HW_VER		"Hw_Ver:V2.0\n"
 
 #define SYSCLK 			(24000000)
@@ -40,30 +43,35 @@ sbit PWR_LED	= P1^6;
 //based output : 1==off,0==on
 #define L_ON  			(0)
 #define L_OFF				(1)
-sbit L1		= P2^2;
-sbit L2		= P2^3;
-sbit L3		= P2^4;
-sbit L4		= P2^5;
-sbit L5		= P2^6;
-sbit L6		= P2^7;
-sbit L7		= P0^0;
-sbit L8		= P0^1;
-sbit L9		= P0^2;
-sbit L10	= P4^3;
-sbit L11	= P0^3;
-sbit L12	= P0^4;
-sbit L13	= P0^5;
-sbit L14	= P0^6;
-sbit L15	= P0^7;
-sbit L16	= P1^0;
-sbit L17	= P5^2;
-sbit L18	= P5^3;
-sbit L19	= P1^1;
-sbit L20	= P1^2;
-sbit L21	= P1^3;
-sbit L22	= P1^4;
-sbit L23	= P4^4;
-sbit L24	= P1^5;
+sbit L1		= P2^5;
+sbit L2		= P2^4;
+sbit L3		= P2^3;
+sbit L4		= P2^2;
+
+sbit L5		= P0^1;
+sbit L6		= P0^0;
+sbit L7		= P2^7;
+sbit L8		= P2^6;
+
+sbit L9		= P0^4;
+sbit L10	= P0^3;
+sbit L11	= P4^3;
+sbit L12	= P0^2;
+
+sbit L13	= P1^0;
+sbit L14	= P0^7;
+sbit L15	= P0^6;
+sbit L16	= P0^5;
+
+sbit L17	= P1^2;
+sbit L18	= P1^1;
+sbit L19	= P5^3;
+sbit L20	= P5^2;
+
+sbit L21	= P1^5;
+sbit L22	= P4^4;
+sbit L23	= P1^4;
+sbit L24	= P1^3;
 
 #define PORT_INIT()	\
 P0M0=0xFF;	P0M1=0x00;\
